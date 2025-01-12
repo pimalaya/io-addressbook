@@ -1,0 +1,16 @@
+name: Releases
+
+on:
+  push:
+    tags:
+      - v*
+    # FIXME: till first release
+    # branches:
+    #   - master
+
+jobs:
+  release:
+    uses: pimalaya/nix/.github/workflows/releases.yml@master
+    secrets: inherit
+    with:
+      project: cardamum
