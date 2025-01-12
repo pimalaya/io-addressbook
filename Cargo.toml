@@ -1,0 +1,23 @@
+[package]
+name = "cardamum"
+description = "CLI to manage contacts"
+version = "0.1.0"
+authors = ["soywod <clement.douin@posteo.net>"]
+edition = "2021"
+license = "MIT"
+categories = ["command-line-utilities"]
+keywords = ["cli", "contact", "addressbook", "carddav", "webdav"]
+homepage = "https://pimalaya.org/"
+documentation = "https://github.com/pimalaya/cardamum/"
+repository = "https://github.com/pimalaya/cardamum/"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+
+[dev-dependencies]
+cardamum = { path = ".", features = [] }
+
+[dependencies]
