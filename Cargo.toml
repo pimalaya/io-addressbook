@@ -21,3 +21,4 @@ default = []
 cardamum = { path = ".", features = [] }
 
 [dependencies]
+thiserror = { version = "2", features = [] }
