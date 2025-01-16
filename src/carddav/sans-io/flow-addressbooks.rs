@@ -1,3 +1,5 @@
+use quick_xml::DeError as Error;
+
 use crate::{
     carddav::serde::{AddressbookProp, Multistatus},
     http::sans_io::{Request, SendReceiveFlow},
@@ -6,7 +8,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct AddressbooksFlow {
-    http: SendReceiveFlow<Multistatus<AddressbookProp>>,
+    http: SendReceiveFlow,
 }
 
 impl AddressbooksFlow {
@@ -35,8 +37,8 @@ impl AddressbooksFlow {
         }
     }
 
-    pub fn output(self) -> Option<Result<Multistatus<AddressbookProp>, quick_xml::de::DeError>> {
-        self.http.output()
+    pub fn output(self) -> Result<Multistatus<AddressbookProp>, Error> {
+        quick_xml::de::from_reader(self.http.take_body().as_slice())
     }
 }
 

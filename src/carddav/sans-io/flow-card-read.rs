@@ -1,26 +1,17 @@
-use quick_xml::DeError as Error;
+use std::string::FromUtf8Error;
 
 use crate::{
-    carddav::serde::{AddressDataProp, Multistatus},
     http::sans_io::{Request, SendReceiveFlow},
     tcp::sans_io::{Flow, Io, Read, Write},
 };
 
 #[derive(Debug)]
-pub struct ListContactsFlow {
+pub struct ReadCardFlow {
     http: SendReceiveFlow,
 }
 
-impl ListContactsFlow {
-    const BODY: &str = r#"
-        <C:addressbook-query xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-            <prop>
-                <getetag />
-                <getlastmodified />
-                <C:address-data />
-            </prop>
-        </C:addressbook-query>
-    "#;
+impl ReadCardFlow {
+    const BODY: &str = "";
 
     pub fn new(
         uri: impl AsRef<str>,
@@ -28,9 +19,8 @@ impl ListContactsFlow {
         user: impl AsRef<str>,
         pass: impl AsRef<str>,
     ) -> Self {
-        let request = Request::report(uri.as_ref(), version.as_ref())
+        let request = Request::get(uri.as_ref(), version.as_ref())
             .basic_auth(user.as_ref(), pass.as_ref())
-            .depth("1")
             .body(Self::BODY);
 
         Self {
@@ -38,14 +28,14 @@ impl ListContactsFlow {
         }
     }
 
-    pub fn output(self) -> Result<Multistatus<AddressDataProp>, Error> {
-        quick_xml::de::from_reader(self.http.take_body().as_slice())
+    pub fn output(self) -> Result<String, FromUtf8Error> {
+        String::from_utf8(self.http.take_body())
     }
 }
 
-impl Flow for ListContactsFlow {}
+impl Flow for ReadCardFlow {}
 
-impl Write for ListContactsFlow {
+impl Write for ReadCardFlow {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -55,7 +45,7 @@ impl Write for ListContactsFlow {
     }
 }
 
-impl Read for ListContactsFlow {
+impl Read for ReadCardFlow {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -65,7 +55,7 @@ impl Read for ListContactsFlow {
     }
 }
 
-impl Iterator for ListContactsFlow {
+impl Iterator for ReadCardFlow {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

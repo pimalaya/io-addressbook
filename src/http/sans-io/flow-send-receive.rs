@@ -1,7 +1,6 @@
 use std::mem;
 
 use memchr::memmem;
-use serde::Deserialize;
 
 use crate::{
     http::sans_io::CRLF,
@@ -14,7 +13,7 @@ const CRLF_CRLF: [u8; 4] = [CR, LF, CR, LF];
 const CONTENT_LENGTH: &[u8] = b"Content-Length";
 
 #[derive(Debug)]
-pub struct SendReceiveFlow<T> {
+pub struct SendReceiveFlow {
     state: Option<State>,
 
     write_buffer: Vec<u8>,
@@ -27,11 +26,9 @@ pub struct SendReceiveFlow<T> {
     response_bytes: Vec<u8>,
     response_body_start: usize,
     response_body_length: usize,
-
-    output: Option<Result<T, quick_xml::de::DeError>>,
 }
 
-impl<T> SendReceiveFlow<T> {
+impl SendReceiveFlow {
     pub fn new(request: Request) -> Self {
         Self {
             state: Some(State::SerializeHttpRequest),
@@ -46,19 +43,41 @@ impl<T> SendReceiveFlow<T> {
             response_bytes: vec![],
             response_body_start: 0,
             response_body_length: 0,
-
-            output: None,
         }
     }
 
-    pub fn output(mut self) -> Option<Result<T, quick_xml::de::DeError>> {
-        self.output.take()
+    pub fn response(&self) -> &[u8] {
+        &self.response_bytes
+    }
+
+    pub fn headers(&self) -> &[u8] {
+        &self.response_bytes[..self.response_body_start]
+    }
+
+    pub fn body(&self) -> &[u8] {
+        &self.response_bytes[self.response_body_start..]
+    }
+
+    pub fn take_response(self) -> Vec<u8> {
+        self.response_bytes
+    }
+
+    pub fn take_headers(mut self) -> Vec<u8> {
+        self.response_bytes
+            .drain(..self.response_body_start)
+            .collect()
+    }
+
+    pub fn take_body(mut self) -> Vec<u8> {
+        self.response_bytes
+            .drain(self.response_body_start..)
+            .collect()
     }
 }
 
-impl<T: for<'de> Deserialize<'de>> Flow for SendReceiveFlow<T> {}
+impl Flow for SendReceiveFlow {}
 
-impl<T: for<'de> Deserialize<'de>> Write for SendReceiveFlow<T> {
+impl Write for SendReceiveFlow {
     fn get_buffer(&mut self) -> &[u8] {
         &self.write_buffer
     }
@@ -68,7 +87,7 @@ impl<T: for<'de> Deserialize<'de>> Write for SendReceiveFlow<T> {
     }
 }
 
-impl<T: for<'de> Deserialize<'de>> Read for SendReceiveFlow<T> {
+impl Read for SendReceiveFlow {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         &mut self.read_buffer
     }
@@ -78,7 +97,7 @@ impl<T: for<'de> Deserialize<'de>> Read for SendReceiveFlow<T> {
     }
 }
 
-impl<T: for<'de> Deserialize<'de>> Iterator for SendReceiveFlow<T> {
+impl Iterator for SendReceiveFlow {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -98,8 +117,7 @@ impl<T: for<'de> Deserialize<'de>> Iterator for SendReceiveFlow<T> {
                 }
                 Some(State::ReceiveHttpResponse) => {
                     if self.read_bytes_count == 0 {
-                        self.state = Some(State::DeserializeHttpResponse);
-                        continue;
+                        return None;
                     }
 
                     let bytes = &self.read_buffer[..self.read_bytes_count];
@@ -155,19 +173,12 @@ impl<T: for<'de> Deserialize<'de>> Iterator for SendReceiveFlow<T> {
                     if self.response_body_start > 0 && self.response_body_length > 0 {
                         let body_bytes = &self.response_bytes[self.response_body_start..];
                         if body_bytes.len() >= self.response_body_length {
-                            self.state = Some(State::DeserializeHttpResponse);
-                            continue;
+                            return None;
                         }
                     }
 
                     self.state = Some(State::ReceiveHttpResponse);
                     return Some(Io::Read);
-                }
-                Some(State::DeserializeHttpResponse) => {
-                    let bytes = &self.response_bytes[self.response_body_start..];
-                    // println!("{}", String::from_utf8_lossy(bytes));
-                    self.output = Some(quick_xml::de::from_reader(bytes));
-                    return None;
                 }
             }
         }

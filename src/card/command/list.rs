@@ -83,7 +83,7 @@ impl ListCardsCommand {
                             }
                         }
 
-                        for response in flow.output().unwrap()?.responses {
+                        for response in flow.output()?.responses {
                             cards.push(Card {
                                 id: response.href.value,
                             });

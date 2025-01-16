@@ -6,32 +6,34 @@ use pimalaya_tui::terminal::{cli::printer::Printer, config::TomlConfig as _};
 
 use crate::{
     account::{arg::name::AccountNameFlag, config::Backend},
-    carddav::sans_io::AddressbooksFlow,
+    carddav::sans_io::ReadCardFlow,
     config::TomlConfig,
-    contact::{Addressbook, Addressbooks, Authentication, Encryption},
+    contact::{Authentication, Encryption},
     tcp::{sans_io::Io as TcpIo, std::Connector},
     tls::std::RustlsConnector,
 };
 
-/// List all folders.
+/// Read all folders.
 ///
-/// This command allows you to list all exsting folders.
+/// This command allows you to read all exsting folders.
 #[derive(Debug, Parser)]
-pub struct ListAddressbooksCommand {
+pub struct ReadCardCommand {
     #[command(flatten)]
     pub account: AccountNameFlag,
+
+    /// The identifier of the vCard to read.
+    #[arg(name = "CARD")]
+    pub card: String,
 }
 
-impl ListAddressbooksCommand {
+impl ReadCardCommand {
     pub fn execute(self, printer: &mut impl Printer, config: TomlConfig) -> Result<()> {
         let (_, toml_account_config) =
             config.to_toml_account_config(self.account.name.as_deref())?;
         let (_, backend) = toml_account_config.into();
 
-        let mut addressbooks = Addressbooks::default();
-
         match backend {
-            Backend::None => bail!("cannot list addressbooks: backend is not defined"),
+            Backend::None => bail!("cannot read card: backend is not defined"),
             Backend::CardDav(config) => {
                 match config.authentication {
                     Authentication::None => unimplemented!(),
@@ -40,8 +42,8 @@ impl ListAddressbooksCommand {
                         let program = args.next().unwrap();
                         let password = Command::new(program).args(args).output().unwrap().stdout;
                         let password = String::from_utf8_lossy(password.trim_ascii());
-                        let mut flow = AddressbooksFlow::new(
-                            &config.url,
+                        let mut flow = ReadCardFlow::new(
+                            &self.card,
                             &config.http_version,
                             &auth.username,
                             &password,
@@ -79,26 +81,11 @@ impl ListAddressbooksCommand {
                             }
                         }
 
-                        for response in flow.output()?.responses {
-                            let id = &response.href.value;
-
-                            for propstat in response.propstats {
-                                if let Some(t) = propstat.prop.resourcetype {
-                                    if t.addressbook.is_some() {
-                                        addressbooks.push(Addressbook {
-                                            id: id.clone(),
-                                            name: propstat.prop.displayname,
-                                        })
-                                    }
-                                }
-                            }
-                        }
+                        printer.out(flow.output()?)?;
                     }
                 };
             }
         };
-
-        printer.out(addressbooks)?;
 
         Ok(())
     }

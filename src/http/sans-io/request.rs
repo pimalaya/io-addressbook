@@ -12,6 +12,7 @@ pub struct Request {
 }
 
 impl Request {
+    pub const GET: &str = "GET";
     pub const PROPFIND: &str = "PROPFIND";
     pub const REPORT: &str = "REPORT";
 
@@ -35,6 +36,10 @@ impl Request {
         bytes.extend(CRLF);
 
         Self { bytes }
+    }
+
+    pub fn get(uri: &str, version: &str) -> Self {
+        Self::new(Self::GET, uri, version)
     }
 
     pub fn propfind(uri: &str, version: &str) -> Self {

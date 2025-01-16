@@ -1,3 +1,5 @@
+use quick_xml::DeError as Error;
+
 use crate::{
     carddav::serde::{CurrentUserPrincipalProp, Multistatus},
     http::sans_io::{Request, SendReceiveFlow},
@@ -6,7 +8,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct CurrentUserPrincipalFlow {
-    http: SendReceiveFlow<Multistatus<CurrentUserPrincipalProp>>,
+    http: SendReceiveFlow,
 }
 
 impl CurrentUserPrincipalFlow {
@@ -33,10 +35,8 @@ impl CurrentUserPrincipalFlow {
         }
     }
 
-    pub fn output(
-        self,
-    ) -> Option<Result<Multistatus<CurrentUserPrincipalProp>, quick_xml::de::DeError>> {
-        self.http.output()
+    pub fn output(self) -> Result<Multistatus<CurrentUserPrincipalProp>, Error> {
+        quick_xml::de::from_reader(self.http.take_body().as_slice())
     }
 }
 

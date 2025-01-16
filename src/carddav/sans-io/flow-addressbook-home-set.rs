@@ -1,3 +1,5 @@
+use quick_xml::DeError as Error;
+
 use crate::{
     carddav::serde::{AddressbookHomeSetProp, Multistatus},
     contact::HttpVersion,
@@ -7,7 +9,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct AddressbookHomeSetFlow {
-    http: SendReceiveFlow<Multistatus<AddressbookHomeSetProp>>,
+    http: SendReceiveFlow,
 }
 
 impl AddressbookHomeSetFlow {
@@ -34,10 +36,8 @@ impl AddressbookHomeSetFlow {
         }
     }
 
-    pub fn output(
-        self,
-    ) -> Option<Result<Multistatus<AddressbookHomeSetProp>, quick_xml::de::DeError>> {
-        self.http.output()
+    pub fn output(self) -> Result<Multistatus<AddressbookHomeSetProp>, Error> {
+        quick_xml::de::from_reader(self.http.take_body().as_slice())
     }
 }
 
