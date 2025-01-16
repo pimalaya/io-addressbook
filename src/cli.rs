@@ -4,14 +4,18 @@ use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use pimalaya_tui::{
     long_version,
-    terminal::cli::{
-        arg::path_parser,
-        printer::{OutputFmt, Printer},
+    terminal::{
+        cli::{
+            arg::path_parser,
+            printer::{OutputFmt, Printer},
+        },
+        config::TomlConfig as _,
     },
 };
 
 use crate::{
-    completion::command::GenerateCompletionsCommand, manual::command::GenerateManualsCommand,
+    addressbook::command::AddressbookSubcommand, completion::command::GenerateCompletionsCommand,
+    config::TomlConfig, manual::command::GenerateManualsCommand,
 };
 
 #[derive(Parser, Debug)]
@@ -80,6 +84,9 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum CardamumCommand {
+    #[command(subcommand)]
+    Addressbooks(AddressbookSubcommand),
+
     #[command(arg_required_else_help = true)]
     #[command(alias = "mans")]
     Manuals(GenerateManualsCommand),
@@ -89,8 +96,12 @@ pub enum CardamumCommand {
 }
 
 impl CardamumCommand {
-    pub fn execute(self, printer: &mut impl Printer, _config_paths: &[PathBuf]) -> Result<()> {
+    pub fn execute(self, printer: &mut impl Printer, config_paths: &[PathBuf]) -> Result<()> {
         match self {
+            Self::Addressbooks(cmd) => {
+                let config = TomlConfig::from_paths_or_default(config_paths)?;
+                cmd.execute(printer, config)
+            }
             Self::Manuals(cmd) => cmd.execute(printer),
             Self::Completions(cmd) => cmd.execute(printer),
         }

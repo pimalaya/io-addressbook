@@ -2,7 +2,7 @@ use std::{env, process::Command};
 
 use cardamum::{
     carddav::sans_io::{
-        AddressbookHomeSetFlow, Addressbooks, CurrentUserPrincipalFlow, ListContactsFlow,
+        AddressbookHomeSetFlow, AddressbooksFlow, CurrentUserPrincipalFlow, ListContactsFlow,
     },
     tcp::{sans_io::Io as TcpIo, std::Connector},
 };
@@ -109,7 +109,7 @@ fn main() {
     // Addressbooks
 
     let mut tcp = Connector::connect(&host, port).unwrap();
-    let mut flow = Addressbooks::new(addressbook_home_set_url, &version, &user, &password);
+    let mut flow = AddressbooksFlow::new(addressbook_home_set_url, &version, &user, &password);
 
     while let Some(io) = flow.next() {
         match io {

@@ -4,6 +4,7 @@
 // lib
 
 pub mod carddav;
+pub mod contact;
 pub mod http;
 pub mod tcp;
 pub mod tls;
@@ -11,6 +12,7 @@ pub mod tls;
 // cli
 
 pub mod account;
+pub mod addressbook;
 pub mod cli;
 pub mod completion;
 pub mod config;

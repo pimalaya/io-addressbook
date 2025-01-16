@@ -1,5 +1,6 @@
 use crate::{
     carddav::serde::{AddressbookHomeSetProp, Multistatus},
+    contact::HttpVersion,
     http::sans_io::{Request, SendReceiveFlow},
     tcp::sans_io::{Flow, Io, Read, Write},
 };
@@ -20,7 +21,7 @@ impl AddressbookHomeSetFlow {
 
     pub fn new(
         uri: impl AsRef<str>,
-        version: impl AsRef<str>,
+        version: &HttpVersion,
         user: impl AsRef<str>,
         pass: impl AsRef<str>,
     ) -> Self {

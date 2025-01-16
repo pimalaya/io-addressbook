@@ -25,10 +25,11 @@ impl pimalaya_tui::terminal::config::TomlConfig for TomlConfig {
 
     fn get_default_account_config(&self) -> Option<(String, Self::TomlAccountConfig)> {
         self.accounts.iter().find_map(|(name, account)| {
-            account
-                .default
-                .filter(|default| *default)
-                .map(|_| (name.to_owned(), account.clone()))
+            if account.default {
+                Some((name.to_owned(), account.clone()))
+            } else {
+                None
+            }
         })
     }
 

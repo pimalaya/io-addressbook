@@ -5,12 +5,19 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Addressbooks {
+pub struct AddressbooksFlow {
     http: SendReceiveFlow<Multistatus<AddressbookProp>>,
 }
 
-impl Addressbooks {
-    const BODY: &str = "";
+impl AddressbooksFlow {
+    const BODY: &str = r#"
+        <propfind xmlns="DAV:" xmlns:cs="http://calendarserver.org/ns/">
+            <prop>
+                <resourcetype />
+                <displayname />
+            </prop>
+        </propfind>
+    "#;
 
     pub fn new(
         uri: impl AsRef<str>,
@@ -33,9 +40,9 @@ impl Addressbooks {
     }
 }
 
-impl Flow for Addressbooks {}
+impl Flow for AddressbooksFlow {}
 
-impl Write for Addressbooks {
+impl Write for AddressbooksFlow {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -45,7 +52,7 @@ impl Write for Addressbooks {
     }
 }
 
-impl Read for Addressbooks {
+impl Read for AddressbooksFlow {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -55,7 +62,7 @@ impl Read for Addressbooks {
     }
 }
 
-impl Iterator for Addressbooks {
+impl Iterator for AddressbooksFlow {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

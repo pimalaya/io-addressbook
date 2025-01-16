@@ -165,6 +165,7 @@ impl<T: for<'de> Deserialize<'de>> Iterator for SendReceiveFlow<T> {
                 }
                 Some(State::DeserializeHttpResponse) => {
                     let bytes = &self.response_bytes[self.response_body_start..];
+                    // println!("{}", String::from_utf8_lossy(bytes));
                     self.output = Some(quick_xml::de::from_reader(bytes));
                     return None;
                 }

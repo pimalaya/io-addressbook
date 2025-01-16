@@ -25,8 +25,10 @@ pub struct Response<T> {
 impl Response<AddressbookProp> {
     pub fn get_addressbook_href(&self) -> Option<&str> {
         for propstat in &self.propstats {
-            if propstat.prop.resourcetype.addressbook.is_some() {
-                return Some(self.href.value.as_str());
+            if let Some(resourcetype) = &propstat.prop.resourcetype {
+                if resourcetype.addressbook.is_some() {
+                    return Some(self.href.value.as_str());
+                }
             }
         }
 
@@ -42,6 +44,12 @@ pub struct Propstat<T> {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Href {
+    #[serde(rename = "$value")]
+    pub value: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Displayname {
     #[serde(rename = "$value")]
     pub value: String,
 }
@@ -116,7 +124,8 @@ pub struct AddressbookHomeSet {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct AddressbookProp {
-    pub resourcetype: AddressbookResourceType,
+    pub resourcetype: Option<AddressbookResourceType>,
+    pub displayname: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
