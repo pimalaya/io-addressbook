@@ -21,7 +21,7 @@ use crate::{
 #[command(propagate_version = true, infer_subcommands = true)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: CardamumCommand,
+    pub command: Option<CardamumCommand>,
 
     /// Override the default configuration file path.
     ///
