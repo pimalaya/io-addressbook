@@ -13,6 +13,7 @@ pub mod tls;
 
 pub mod account;
 pub mod addressbook;
+pub mod card;
 pub mod cli;
 pub mod completion;
 pub mod config;
