@@ -2,6 +2,18 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct DeleteAddressbook {
+    #[serde(rename = "response")]
+    pub responses: Vec<DeleteAddressbookResponse>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct DeleteAddressbookResponse {
+    pub href: Href,
+    pub status: Status,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Multistatus<T> {
     #[serde(rename = "response")]
     pub responses: Vec<Response<T>>,

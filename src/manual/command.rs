@@ -47,7 +47,7 @@ impl GenerateManualsCommand {
         }
 
         printer.out(format!(
-            "{subcmds_len} man page(s) successfully generated in {}\n",
+            "{subcmds_len} man page(s) successfully generated in {}",
             dir.display()
         ))
     }

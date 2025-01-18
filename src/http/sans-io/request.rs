@@ -12,10 +12,11 @@ pub struct Request {
 }
 
 impl Request {
+    pub const DELETE: &str = "DELETE";
     pub const GET: &str = "GET";
     pub const MKCOL: &str = "MKCOL";
-    pub const PROPPATCH: &str = "PROPPATCH";
     pub const PROPFIND: &str = "PROPFIND";
+    pub const PROPPATCH: &str = "PROPPATCH";
     pub const REPORT: &str = "REPORT";
 
     pub fn new(method: &str, uri: &str, version: &str) -> Self {
@@ -38,6 +39,10 @@ impl Request {
         bytes.extend(CRLF);
 
         Self { bytes }
+    }
+
+    pub fn delete(uri: &str, version: &str) -> Self {
+        Self::new(Self::DELETE, uri, version)
     }
 
     pub fn get(uri: &str, version: &str) -> Self {

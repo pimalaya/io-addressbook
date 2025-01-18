@@ -1,23 +1,23 @@
-use std::process::Command;
+use std::process::{self, Command};
 
 use clap::Parser;
 use color_eyre::{eyre::bail, Result};
-use pimalaya_tui::terminal::{cli::printer::Printer, config::TomlConfig as _};
+use pimalaya_tui::terminal::{cli::printer::Printer, config::TomlConfig as _, prompt};
 
 use crate::{
     account::{arg::name::AccountNameFlag, config::Backend},
-    carddav::sans_io::UpdateAddressbookFlow,
+    carddav::sans_io::DeleteAddressbookFlow,
     config::TomlConfig,
     contact::{Authentication, Encryption},
     tcp::{sans_io::Io as TcpIo, std::Connector},
     tls::std::RustlsConnector,
 };
 
-/// Update all folders.
+/// Delete all folders.
 ///
-/// This command allows you to update all exsting folders.
+/// This command allows you to delete all exsting folders.
 #[derive(Debug, Parser)]
-pub struct UpdateAddressbookCommand {
+pub struct DeleteAddressbookCommand {
     #[command(flatten)]
     pub account: AccountNameFlag,
 
@@ -25,21 +25,26 @@ pub struct UpdateAddressbookCommand {
     pub id: String,
 
     #[arg(long, short)]
-    pub name: Option<String>,
-    #[arg(long, short = 'C')]
-    pub color: Option<String>,
-    #[arg(long = "desc", short)]
-    pub desc: Option<String>,
+    pub yes: bool,
 }
 
-impl UpdateAddressbookCommand {
+impl DeleteAddressbookCommand {
     pub fn execute(self, printer: &mut impl Printer, config: TomlConfig) -> Result<()> {
+        if !self.yes {
+            let confirm = "Do you really want to delete this addressbook";
+            let confirm = format!("{confirm}? All contacts will be definitely deleted.");
+
+            if !prompt::bool(confirm, false)? {
+                process::exit(0);
+            };
+        };
+
         let (_, toml_account_config) =
             config.to_toml_account_config(self.account.name.as_deref())?;
         let (_, backend) = toml_account_config.into();
 
         match backend {
-            Backend::None => bail!("cannot update addressbook: backend is not defined"),
+            Backend::None => bail!("cannot delete addressbook: backend is not defined"),
             Backend::CardDav(config) => match config.authentication {
                 Authentication::None => unimplemented!(),
                 Authentication::Basic(auth) => {
@@ -47,14 +52,11 @@ impl UpdateAddressbookCommand {
                     let program = args.next().unwrap();
                     let password = Command::new(program).args(args).output().unwrap().stdout;
                     let password = String::from_utf8_lossy(password.trim_ascii());
-                    let mut flow = UpdateAddressbookFlow::new(
+                    let mut flow = DeleteAddressbookFlow::new(
                         &self.id,
                         &config.http_version,
                         &auth.username,
                         &password,
-                        self.name.as_ref(),
-                        self.color.as_ref(),
-                        self.desc.as_ref(),
                     );
 
                     match config.encryption {
@@ -91,6 +93,6 @@ impl UpdateAddressbookCommand {
             },
         };
 
-        printer.out("Addressbook successfully updated")
+        printer.out("Addressbook successfully deleted")
     }
 }
