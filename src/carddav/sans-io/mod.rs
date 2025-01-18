@@ -10,6 +10,8 @@ mod flow_addressbook_update;
 mod flow_addressbooks_list;
 #[path = "flow-card-create.rs"]
 mod flow_card_create;
+#[path = "flow-card-delete.rs"]
+mod flow_card_delete;
 #[path = "flow-card-read.rs"]
 mod flow_card_read;
 #[path = "flow-card-update.rs"]
@@ -24,6 +26,7 @@ mod flow_current_user_principal;
 #[doc(inline)]
 pub use self::{
     flow_addressbook_create::*, flow_addressbook_delete::*, flow_addressbook_home_set::*,
-    flow_addressbook_update::*, flow_addressbooks_list::*, flow_card_create::*, flow_card_read::*,
-    flow_card_update::*, flow_cards_list::*, flow_contact_list::*, flow_current_user_principal::*,
+    flow_addressbook_update::*, flow_addressbooks_list::*, flow_card_create::*,
+    flow_card_delete::*, flow_card_read::*, flow_card_update::*, flow_cards_list::*,
+    flow_contact_list::*, flow_current_user_principal::*,
 };

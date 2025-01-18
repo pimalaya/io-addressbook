@@ -1,4 +1,5 @@
 mod create;
+mod delete;
 mod list;
 mod read;
 mod update;
@@ -10,8 +11,8 @@ use pimalaya_tui::terminal::cli::printer::Printer;
 use crate::config::TomlConfig;
 
 use self::{
-    create::CreateCardCommand, list::ListCardsCommand, read::ReadCardCommand,
-    update::UpdateCardCommand,
+    create::CreateCardCommand, delete::DeleteCardCommand, list::ListCardsCommand,
+    read::ReadCardCommand, update::UpdateCardCommand,
 };
 
 #[derive(Debug, Subcommand)]
@@ -27,6 +28,9 @@ pub enum CardSubcommand {
 
     #[command(alias = "set", alias = "change")]
     Update(UpdateCardCommand),
+
+    #[command(alias = "remove", alias = "rm")]
+    Delete(DeleteCardCommand),
 }
 
 impl CardSubcommand {
@@ -36,6 +40,7 @@ impl CardSubcommand {
             Self::Read(cmd) => cmd.execute(printer, config),
             Self::List(cmd) => cmd.execute(printer, config),
             Self::Update(cmd) => cmd.execute(printer, config),
+            Self::Delete(cmd) => cmd.execute(printer, config),
         }
     }
 }
