@@ -13,10 +13,11 @@ pub struct ListAddressbooksFlow {
 
 impl ListAddressbooksFlow {
     const BODY: &str = r#"
-        <propfind xmlns="DAV:" xmlns:cs="http://calendarserver.org/ns/">
+        <propfind xmlns="DAV:" xmlns:i="http://inf-it.com/ns/ab/">
             <prop>
                 <resourcetype />
                 <displayname />
+                <i:addressbook-color />
             </prop>
         </propfind>
     "#;

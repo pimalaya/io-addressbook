@@ -126,6 +126,7 @@ pub struct AddressbookHomeSet {
 pub struct AddressbookProp {
     pub resourcetype: Option<AddressbookResourceType>,
     pub displayname: Option<String>,
+    pub addressbook_color: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
