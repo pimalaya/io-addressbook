@@ -14,6 +14,7 @@ pub struct Request {
 impl Request {
     pub const GET: &str = "GET";
     pub const MKCOL: &str = "MKCOL";
+    pub const PROPPATCH: &str = "PROPPATCH";
     pub const PROPFIND: &str = "PROPFIND";
     pub const REPORT: &str = "REPORT";
 
@@ -45,6 +46,10 @@ impl Request {
 
     pub fn mkcol(uri: &str, version: &str) -> Self {
         Self::new(Self::MKCOL, uri, version)
+    }
+
+    pub fn proppatch(uri: &str, version: &str) -> Self {
+        Self::new(Self::PROPPATCH, uri, version)
     }
 
     pub fn propfind(uri: &str, version: &str) -> Self {
