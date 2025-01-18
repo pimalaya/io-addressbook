@@ -22,8 +22,8 @@ pub struct ReadCardCommand {
     pub account: AccountNameFlag,
 
     /// The identifier of the vCard to read.
-    #[arg(name = "CARD")]
-    pub card: String,
+    #[arg(name = "CARD-ID")]
+    pub id: String,
 }
 
 impl ReadCardCommand {
@@ -43,7 +43,7 @@ impl ReadCardCommand {
                         let password = Command::new(program).args(args).output().unwrap().stdout;
                         let password = String::from_utf8_lossy(password.trim_ascii());
                         let mut flow = ReadCardFlow::new(
-                            &self.card,
+                            &self.id,
                             &config.http_version,
                             &auth.username,
                             &password,

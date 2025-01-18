@@ -6,11 +6,11 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct CreateCardFlow {
+pub struct UpdateCardFlow {
     http: SendReceiveFlow,
 }
 
-impl CreateCardFlow {
+impl UpdateCardFlow {
     pub fn new(
         uri: impl AsRef<str>,
         version: impl AsRef<str>,
@@ -33,9 +33,9 @@ impl CreateCardFlow {
     }
 }
 
-impl Flow for CreateCardFlow {}
+impl Flow for UpdateCardFlow {}
 
-impl Write for CreateCardFlow {
+impl Write for UpdateCardFlow {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -45,7 +45,7 @@ impl Write for CreateCardFlow {
     }
 }
 
-impl Read for CreateCardFlow {
+impl Read for UpdateCardFlow {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -55,7 +55,7 @@ impl Read for CreateCardFlow {
     }
 }
 
-impl Iterator for CreateCardFlow {
+impl Iterator for UpdateCardFlow {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

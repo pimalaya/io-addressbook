@@ -1,6 +1,7 @@
 mod create;
 mod list;
 mod read;
+mod update;
 
 use clap::Subcommand;
 use color_eyre::Result;
@@ -8,7 +9,10 @@ use pimalaya_tui::terminal::cli::printer::Printer;
 
 use crate::config::TomlConfig;
 
-use self::{create::CreateCardCommand, list::ListCardsCommand, read::ReadCardCommand};
+use self::{
+    create::CreateCardCommand, list::ListCardsCommand, read::ReadCardCommand,
+    update::UpdateCardCommand,
+};
 
 #[derive(Debug, Subcommand)]
 pub enum CardSubcommand {
@@ -20,6 +24,9 @@ pub enum CardSubcommand {
 
     #[command(alias = "lst")]
     List(ListCardsCommand),
+
+    #[command(alias = "set", alias = "change")]
+    Update(UpdateCardCommand),
 }
 
 impl CardSubcommand {
@@ -28,6 +35,7 @@ impl CardSubcommand {
             Self::Create(cmd) => cmd.execute(printer, config),
             Self::Read(cmd) => cmd.execute(printer, config),
             Self::List(cmd) => cmd.execute(printer, config),
+            Self::Update(cmd) => cmd.execute(printer, config),
         }
     }
 }
