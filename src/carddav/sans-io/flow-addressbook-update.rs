@@ -43,6 +43,7 @@ impl UpdateAddressbookFlow {
         };
 
         let request = Request::proppatch(uri.as_ref(), version.as_ref())
+            .content_type_xml()
             .basic_auth(user.as_ref(), pass.as_ref())
             .body(&format!(
                 include_str!("./flow-addressbook-update.xml"),

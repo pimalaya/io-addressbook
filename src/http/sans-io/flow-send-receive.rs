@@ -109,6 +109,7 @@ impl Iterator for SendReceiveFlow {
                     let mut request = Request::default();
                     mem::swap(&mut request, &mut self.request);
                     self.write_buffer = request.into();
+                    // println!("request:\n{}", String::from_utf8_lossy(&self.write_buffer));
                     return Some(Io::Write);
                 }
                 Some(State::SendHttpRequest) => {
@@ -124,7 +125,7 @@ impl Iterator for SendReceiveFlow {
                     self.response_bytes.extend(bytes);
 
                     // println!(
-                    //     "bytes({}/{}): {:?}",
+                    //     "bytes({}/{}):\n{}",
                     //     self.read_bytes_count,
                     //     self.read_buffer.len(),
                     //     String::from_utf8_lossy(bytes)

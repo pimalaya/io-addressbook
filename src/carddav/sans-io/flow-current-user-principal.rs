@@ -27,6 +27,7 @@ impl CurrentUserPrincipalFlow {
         pass: impl AsRef<str>,
     ) -> Self {
         let request = Request::propfind(uri.as_ref(), version.as_ref())
+            .content_type_xml()
             .basic_auth(user.as_ref(), pass.as_ref())
             .body(Self::BODY);
 

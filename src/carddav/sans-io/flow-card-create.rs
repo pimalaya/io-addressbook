@@ -1,44 +1,41 @@
-use quick_xml::DeError as Error;
+use std::string::FromUtf8Error;
 
 use crate::{
-    carddav::serde::{AddressbookProp, Multistatus},
     http::sans_io::{Request, SendReceiveFlow},
     tcp::sans_io::{Flow, Io, Read, Write},
 };
 
 #[derive(Debug)]
-pub struct ListAddressbooksFlow {
+pub struct CreateCardFlow {
     http: SendReceiveFlow,
 }
 
-impl ListAddressbooksFlow {
-    const BODY: &str = include_str!("./flow-addressbooks-list.xml");
-
+impl CreateCardFlow {
     pub fn new(
         uri: impl AsRef<str>,
         version: impl AsRef<str>,
         user: impl AsRef<str>,
         pass: impl AsRef<str>,
+        vcard: impl AsRef<str>,
     ) -> Self {
-        let request = Request::propfind(uri.as_ref(), version.as_ref())
-            .content_type_xml()
+        let request = Request::put(uri.as_ref(), version.as_ref())
+            .content_type_vcard()
             .basic_auth(user.as_ref(), pass.as_ref())
-            .depth("1")
-            .body(Self::BODY);
+            .body(vcard.as_ref());
 
         Self {
             http: SendReceiveFlow::new(request),
         }
     }
 
-    pub fn output(self) -> Result<Multistatus<AddressbookProp>, Error> {
-        quick_xml::de::from_reader(self.http.take_body().as_slice())
+    pub fn output(self) -> Result<String, FromUtf8Error> {
+        String::from_utf8(self.http.take_body())
     }
 }
 
-impl Flow for ListAddressbooksFlow {}
+impl Flow for CreateCardFlow {}
 
-impl Write for ListAddressbooksFlow {
+impl Write for CreateCardFlow {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -48,7 +45,7 @@ impl Write for ListAddressbooksFlow {
     }
 }
 
-impl Read for ListAddressbooksFlow {
+impl Read for CreateCardFlow {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -58,7 +55,7 @@ impl Read for ListAddressbooksFlow {
     }
 }
 
-impl Iterator for ListAddressbooksFlow {
+impl Iterator for CreateCardFlow {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

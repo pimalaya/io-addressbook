@@ -17,6 +17,7 @@ impl Request {
     pub const MKCOL: &str = "MKCOL";
     pub const PROPFIND: &str = "PROPFIND";
     pub const PROPPATCH: &str = "PROPPATCH";
+    pub const PUT: &str = "PUT";
     pub const REPORT: &str = "REPORT";
 
     pub fn new(method: &str, uri: &str, version: &str) -> Self {
@@ -33,9 +34,6 @@ impl Request {
         bytes.extend(b"Date: ");
         bytes.extend(Utc::now().format("%a, %d %b %Y %T").to_string().as_bytes());
         bytes.extend(b" GMT");
-        bytes.extend(CRLF);
-
-        bytes.extend(b"Content-Type: application/xml; charset=utf-8");
         bytes.extend(CRLF);
 
         Self { bytes }
@@ -61,6 +59,10 @@ impl Request {
         Self::new(Self::PROPFIND, uri, version)
     }
 
+    pub fn put(uri: &str, version: &str) -> Self {
+        Self::new(Self::PUT, uri, version)
+    }
+
     pub fn report(uri: &str, version: &str) -> Self {
         Self::new(Self::REPORT, uri, version)
     }
@@ -69,7 +71,7 @@ impl Request {
         let auth = BASE64_STANDARD.encode(format!("{user}:{pass}"));
         self.bytes.extend(b"Authorization: Basic ");
         self.bytes.extend(auth.as_bytes());
-        self.bytes.extend(b"\r\n");
+        self.bytes.extend(CRLF);
         self
     }
 
@@ -77,7 +79,7 @@ impl Request {
         self.bytes.extend(key.as_bytes());
         self.bytes.extend(b": ");
         self.bytes.extend(value.as_bytes());
-        self.bytes.extend(b"\r\n");
+        self.bytes.extend(CRLF);
         self
     }
 
@@ -85,14 +87,23 @@ impl Request {
         self.header("Depth", value)
     }
 
-    pub fn connection(self, value: &str) -> Self {
-        self.header("Connection", value)
+    pub fn content_type(self, value: &str) -> Self {
+        self.header("Content-Type", value)
+    }
+
+    pub fn content_type_xml(self) -> Self {
+        self.content_type("text/xml; charset=utf-8")
+    }
+
+    pub fn content_type_vcard(self) -> Self {
+        self.content_type("text/vcard; charset=utf-8")
     }
 
     pub fn body(mut self, body: &str) -> Self {
         self.bytes.extend(b"Content-Length: ");
         self.bytes.extend(body.len().to_string().as_bytes());
-        self.bytes.extend(b"\r\n\r\n");
+        self.bytes.extend(CRLF);
+        self.bytes.extend(CRLF);
         self.bytes.extend(body.as_bytes());
         self
     }

@@ -43,6 +43,7 @@ impl CreateAddressbookFlow {
         };
 
         let request = Request::mkcol(uri, version.as_ref())
+            .content_type_xml()
             .basic_auth(user.as_ref(), pass.as_ref())
             .body(&format!(
                 include_str!("./flow-addressbook-create.xml"),

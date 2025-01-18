@@ -27,6 +27,7 @@ impl ListCardsFlow {
         pass: impl AsRef<str>,
     ) -> Self {
         let request = Request::report(uri.as_ref(), version.as_ref())
+            .content_type_xml()
             .basic_auth(user.as_ref(), pass.as_ref())
             .depth("1")
             .body(Self::BODY);
