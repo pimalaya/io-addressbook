@@ -7,11 +7,11 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct AddressbooksFlow {
+pub struct ListAddressbooksFlow {
     http: SendReceiveFlow,
 }
 
-impl AddressbooksFlow {
+impl ListAddressbooksFlow {
     const BODY: &str = r#"
         <propfind xmlns="DAV:" xmlns:cs="http://calendarserver.org/ns/">
             <prop>
@@ -42,9 +42,9 @@ impl AddressbooksFlow {
     }
 }
 
-impl Flow for AddressbooksFlow {}
+impl Flow for ListAddressbooksFlow {}
 
-impl Write for AddressbooksFlow {
+impl Write for ListAddressbooksFlow {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -54,7 +54,7 @@ impl Write for AddressbooksFlow {
     }
 }
 
-impl Read for AddressbooksFlow {
+impl Read for ListAddressbooksFlow {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -64,7 +64,7 @@ impl Read for AddressbooksFlow {
     }
 }
 
-impl Iterator for AddressbooksFlow {
+impl Iterator for ListAddressbooksFlow {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

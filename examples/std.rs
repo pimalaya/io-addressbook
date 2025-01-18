@@ -2,8 +2,9 @@ use std::{env, process::Command};
 
 use cardamum::{
     carddav::sans_io::{
-        AddressbookHomeSetFlow, AddressbooksFlow, CurrentUserPrincipalFlow, ListContactsFlow,
+        AddressbookHomeSetFlow, CurrentUserPrincipalFlow, ListAddressbooksFlow, ListContactsFlow,
     },
+    contact::HttpVersion,
     tcp::{sans_io::Io as TcpIo, std::Connector},
 };
 
@@ -16,6 +17,11 @@ fn main() {
     println!("using port: {port:?}");
 
     let version = env::var("VERSION").unwrap_or(String::from("1.1"));
+    let version = if version == "1.1" {
+        HttpVersion::Http1_1
+    } else {
+        HttpVersion::Http1_0
+    };
     println!("using HTTP version: {version:?}");
 
     let user = env::var("USER").unwrap_or(String::from("test"));
@@ -49,7 +55,7 @@ fn main() {
         }
     }
 
-    let output = flow.output().unwrap().unwrap();
+    let output = flow.output().unwrap();
 
     println!("current user principal output: {output:#?}");
 
@@ -86,7 +92,7 @@ fn main() {
         }
     }
 
-    let output = flow.output().unwrap().unwrap();
+    let output = flow.output().unwrap();
 
     println!("addressbook home set output: {output:#?}");
 
@@ -109,7 +115,7 @@ fn main() {
     // Addressbooks
 
     let mut tcp = Connector::connect(&host, port).unwrap();
-    let mut flow = AddressbooksFlow::new(addressbook_home_set_url, &version, &user, &password);
+    let mut flow = ListAddressbooksFlow::new(addressbook_home_set_url, &version, &user, &password);
 
     while let Some(io) = flow.next() {
         match io {
@@ -122,7 +128,7 @@ fn main() {
         }
     }
 
-    let output = flow.output().unwrap().unwrap();
+    let output = flow.output().unwrap();
 
     println!("addressbooks output: {output:#?}");
 

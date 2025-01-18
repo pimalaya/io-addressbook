@@ -6,7 +6,7 @@ use pimalaya_tui::terminal::{cli::printer::Printer, config::TomlConfig as _};
 
 use crate::{
     account::{arg::name::AccountNameFlag, config::Backend},
-    carddav::sans_io::AddressbooksFlow,
+    carddav::sans_io::ListAddressbooksFlow,
     config::TomlConfig,
     contact::{Addressbook, Addressbooks, Authentication, Encryption},
     tcp::{sans_io::Io as TcpIo, std::Connector},
@@ -40,7 +40,7 @@ impl ListAddressbooksCommand {
                         let program = args.next().unwrap();
                         let password = Command::new(program).args(args).output().unwrap().stdout;
                         let password = String::from_utf8_lossy(password.trim_ascii());
-                        let mut flow = AddressbooksFlow::new(
+                        let mut flow = ListAddressbooksFlow::new(
                             &config.url,
                             &config.http_version,
                             &auth.username,
