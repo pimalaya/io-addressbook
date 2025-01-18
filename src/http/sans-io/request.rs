@@ -13,6 +13,7 @@ pub struct Request {
 
 impl Request {
     pub const GET: &str = "GET";
+    pub const MKCOL: &str = "MKCOL";
     pub const PROPFIND: &str = "PROPFIND";
     pub const REPORT: &str = "REPORT";
 
@@ -40,6 +41,10 @@ impl Request {
 
     pub fn get(uri: &str, version: &str) -> Self {
         Self::new(Self::GET, uri, version)
+    }
+
+    pub fn mkcol(uri: &str, version: &str) -> Self {
+        Self::new(Self::MKCOL, uri, version)
     }
 
     pub fn propfind(uri: &str, version: &str) -> Self {

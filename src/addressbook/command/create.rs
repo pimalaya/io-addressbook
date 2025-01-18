@@ -6,30 +6,38 @@ use pimalaya_tui::terminal::{cli::printer::Printer, config::TomlConfig as _};
 
 use crate::{
     account::{arg::name::AccountNameFlag, config::Backend},
-    carddav::sans_io::ListAddressbooksFlow,
+    carddav::sans_io::CreateAddressbookFlow,
     config::TomlConfig,
-    contact::{Addressbooks, AddressbooksTable, Authentication, Encryption},
+    contact::{Authentication, Encryption},
     tcp::{sans_io::Io as TcpIo, std::Connector},
     tls::std::RustlsConnector,
 };
 
-/// List all folders.
+/// Create all folders.
 ///
-/// This command allows you to list all exsting folders.
+/// This command allows you to create all exsting folders.
 #[derive(Debug, Parser)]
-pub struct ListAddressbooksCommand {
+pub struct CreateAddressbookCommand {
     #[command(flatten)]
     pub account: AccountNameFlag,
+
+    #[arg()]
+    pub name: String,
+
+    #[arg(long, short = 'C', default_value = "Default::default")]
+    pub color: String,
+    #[arg(long = "desc", short, default_value = "Default::default")]
+    pub description: String,
 }
 
-impl ListAddressbooksCommand {
+impl CreateAddressbookCommand {
     pub fn execute(self, printer: &mut impl Printer, config: TomlConfig) -> Result<()> {
         let (_, toml_account_config) =
             config.to_toml_account_config(self.account.name.as_deref())?;
         let (_, backend) = toml_account_config.into();
 
-        let addressbooks = match backend {
-            Backend::None => bail!("cannot list addressbooks: backend is not defined"),
+        match backend {
+            Backend::None => bail!("cannot create addressbook: backend is not defined"),
             Backend::CardDav(config) => match config.authentication {
                 Authentication::None => unimplemented!(),
                 Authentication::Basic(auth) => {
@@ -37,11 +45,14 @@ impl ListAddressbooksCommand {
                     let program = args.next().unwrap();
                     let password = Command::new(program).args(args).output().unwrap().stdout;
                     let password = String::from_utf8_lossy(password.trim_ascii());
-                    let mut flow = ListAddressbooksFlow::new(
+                    let mut flow = CreateAddressbookFlow::new(
                         &config.url,
                         &config.http_version,
                         &auth.username,
                         &password,
+                        &self.name,
+                        &self.color,
+                        &self.description,
                     );
 
                     match config.encryption {
@@ -74,13 +85,10 @@ impl ListAddressbooksCommand {
                             }
                         }
                     }
-
-                    Addressbooks::try_from(flow)?
                 }
             },
         };
 
-        let table = AddressbooksTable::from(addressbooks);
-        printer.out(table)
+        printer.out("Addressbook successfully created")
     }
 }

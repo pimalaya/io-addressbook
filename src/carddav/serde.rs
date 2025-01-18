@@ -7,6 +7,11 @@ pub struct Multistatus<T> {
     pub responses: Vec<Response<T>>,
 }
 
+#[derive(Clone, Debug, Deserialize)]
+pub struct MkcolResponse<T> {
+    pub propstat: Propstat<T>,
+}
+
 impl Multistatus<AddressbookProp> {
     pub fn get_addressbook_hrefs(&self) -> impl Iterator<Item = &str> {
         self.responses
