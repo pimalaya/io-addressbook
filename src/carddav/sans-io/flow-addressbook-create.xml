@@ -7,8 +7,8 @@
         <C:addressbook />
       </resourcetype>
       <displayname>{}</displayname>
-      <I:addressbook-color>{}</I:addressbook-color>
-      <C:addressbook-description>{}</C:addressbook-description>
+      {}
+      {}
     </prop>
   </set>
 </mkcol>

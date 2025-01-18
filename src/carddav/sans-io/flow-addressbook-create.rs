@@ -19,20 +19,34 @@ impl CreateAddressbookFlow {
         user: impl AsRef<str>,
         pass: impl AsRef<str>,
         name: impl AsRef<str>,
-        color: impl AsRef<str>,
-        desc: impl AsRef<str>,
+        desc: Option<impl AsRef<str>>,
+        color: Option<impl AsRef<str>>,
     ) -> Self {
         let name = name.as_ref();
         let uuid = Uuid::new_v4();
         let uri = &format!("{}/{uuid:x}", uri.as_ref());
 
+        let color = match color {
+            Some(color) => format!(
+                "<I:addressbook-color>{}</I:addressbook-color>",
+                color.as_ref()
+            ),
+            None => String::new(),
+        };
+
+        let desc = match desc {
+            Some(desc) => format!(
+                "<C:addressbook-description>{}</C:addressbook-description>",
+                desc.as_ref()
+            ),
+            None => String::new(),
+        };
+
         let request = Request::mkcol(uri, version.as_ref())
             .basic_auth(user.as_ref(), pass.as_ref())
             .body(&format!(
                 include_str!("./flow-addressbook-create.xml"),
-                name,
-                color.as_ref(),
-                desc.as_ref()
+                name, color, desc,
             ));
 
         Self {

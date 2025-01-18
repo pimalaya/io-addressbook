@@ -132,6 +132,7 @@ pub struct AddressbookProp {
     pub resourcetype: Option<AddressbookResourceType>,
     pub displayname: Option<String>,
     pub addressbook_color: Option<String>,
+    pub addressbook_description: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

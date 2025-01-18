@@ -12,15 +12,7 @@ pub struct ListAddressbooksFlow {
 }
 
 impl ListAddressbooksFlow {
-    const BODY: &str = r#"
-        <propfind xmlns="DAV:" xmlns:i="http://inf-it.com/ns/ab/">
-            <prop>
-                <resourcetype />
-                <displayname />
-                <i:addressbook-color />
-            </prop>
-        </propfind>
-    "#;
+    const BODY: &str = include_str!("./flow-addressbooks-list.xml");
 
     pub fn new(
         uri: impl AsRef<str>,

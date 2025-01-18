@@ -24,10 +24,10 @@ pub struct CreateAddressbookCommand {
     #[arg()]
     pub name: String,
 
-    #[arg(long, short = 'C', default_value = "Default::default")]
-    pub color: String,
-    #[arg(long = "desc", short, default_value = "Default::default")]
-    pub description: String,
+    #[arg(long, short = 'C')]
+    pub color: Option<String>,
+    #[arg(long = "desc", short)]
+    pub description: Option<String>,
 }
 
 impl CreateAddressbookCommand {
@@ -51,8 +51,8 @@ impl CreateAddressbookCommand {
                         &auth.username,
                         &password,
                         &self.name,
-                        &self.color,
-                        &self.description,
+                        self.description.as_ref(),
+                        self.color.as_ref(),
                     );
 
                     match config.encryption {

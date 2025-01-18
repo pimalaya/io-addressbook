@@ -21,7 +21,7 @@ pub struct UpdateAddressbookCommand {
     #[command(flatten)]
     pub account: AccountNameFlag,
 
-    #[arg(name = "ADDRESSBOOK")]
+    #[arg(name = "ADDRESSBOOK-ID")]
     pub id: String,
 
     #[arg(long, short)]

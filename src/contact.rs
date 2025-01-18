@@ -138,6 +138,7 @@ pub struct BasicAuthenticationConfig {
 pub struct Addressbook {
     pub id: String,
     pub name: Option<String>,
+    pub desc: Option<String>,
     pub color: Option<String>,
 }
 
@@ -166,6 +167,7 @@ pub struct ListAddressbooksTableConfig {
 
     pub id_color: Option<Color>,
     pub name_color: Option<Color>,
+    pub desc_color: Option<Color>,
 }
 
 impl ListAddressbooksTableConfig {
@@ -178,6 +180,10 @@ impl ListAddressbooksTableConfig {
     }
 
     pub fn name_color(&self) -> comfy_table::Color {
+        map_color(self.name_color.unwrap_or(Color::Reset))
+    }
+
+    pub fn desc_color(&self) -> comfy_table::Color {
         map_color(self.name_color.unwrap_or(Color::Green))
     }
 }
@@ -208,6 +214,11 @@ impl AddressbooksTable {
         self.config.name_color = color;
         self
     }
+
+    pub fn with_some_desc_color(mut self, color: Option<Color>) -> Self {
+        self.config.desc_color = color;
+        self
+    }
 }
 
 impl From<Addressbooks> for AddressbooksTable {
@@ -230,6 +241,7 @@ impl fmt::Display for AddressbooksTable {
             .set_header(Row::from([
                 Cell::new("ID"),
                 Cell::new("NAME"),
+                Cell::new("DESC"),
                 Cell::new("COLOR"),
             ]))
             .add_rows(self.addressbooks.iter().map(|addressbook| {
@@ -240,6 +252,12 @@ impl fmt::Display for AddressbooksTable {
 
                 if let Some(name) = &addressbook.name {
                     row.add_cell(Cell::new(name).fg(self.config.name_color()));
+                } else {
+                    row.add_cell(Cell::new(String::new()));
+                }
+
+                if let Some(desc) = &addressbook.desc {
+                    row.add_cell(Cell::new(desc).fg(self.config.desc_color()));
                 } else {
                     row.add_cell(Cell::new(String::new()));
                 }
@@ -301,6 +319,7 @@ impl TryFrom<ListAddressbooksFlow> for Addressbooks {
                         addressbooks.push(Addressbook {
                             id: id.clone(),
                             name: propstat.prop.displayname,
+                            desc: propstat.prop.addressbook_description,
                             color: propstat.prop.addressbook_color,
                         })
                     }
