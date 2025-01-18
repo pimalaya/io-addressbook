@@ -243,6 +243,7 @@ dependencies = [
  "thiserror 2.0.11",
  "tracing",
  "uuid",
+ "vparser",
 ]
 
 [[package]]
@@ -1957,6 +1958,12 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
+name = "vparser"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9d339a897ca0e42126ae5cccc53acc1bdc55e9888938e4beb7ca58f63ff5a7a"
 
 [[package]]
 name = "walkdir"

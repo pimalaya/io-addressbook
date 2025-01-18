@@ -8,7 +8,7 @@ use crate::{
     account::{arg::name::AccountNameFlag, config::Backend},
     carddav::sans_io::ListCardsFlow,
     config::TomlConfig,
-    contact::{Authentication, Card, Cards, Encryption},
+    contact::{Authentication, Cards, CardsTable, Encryption},
     tcp::{sans_io::Io as TcpIo, std::Connector},
     tls::std::RustlsConnector,
 };
@@ -22,8 +22,8 @@ pub struct ListCardsCommand {
     pub account: AccountNameFlag,
 
     /// The identifier of the CardDAV addressbook to list vCards from.
-    #[arg(name = "ADDRESSBOOK")]
-    pub addressbook: String,
+    #[arg(name = "ADDRESSBOOK-ID")]
+    pub id: String,
 }
 
 impl ListCardsCommand {
@@ -32,69 +32,59 @@ impl ListCardsCommand {
             config.to_toml_account_config(self.account.name.as_deref())?;
         let (_, backend) = toml_account_config.into();
 
-        let mut cards = Cards::default();
-
-        match backend {
+        let cards = match backend {
             Backend::None => bail!("cannot list cards: backend is not defined"),
-            Backend::CardDav(config) => {
-                match config.authentication {
-                    Authentication::None => unimplemented!(),
-                    Authentication::Basic(auth) => {
-                        let mut args = auth.password.split_whitespace();
-                        let program = args.next().unwrap();
-                        let password = Command::new(program).args(args).output().unwrap().stdout;
-                        let password = String::from_utf8_lossy(password.trim_ascii());
-                        let mut flow = ListCardsFlow::new(
-                            &self.addressbook,
-                            &config.http_version,
-                            &auth.username,
-                            &password,
-                        );
+            Backend::CardDav(config) => match config.authentication {
+                Authentication::None => unimplemented!(),
+                Authentication::Basic(auth) => {
+                    let mut args = auth.password.split_whitespace();
+                    let program = args.next().unwrap();
+                    let password = Command::new(program).args(args).output().unwrap().stdout;
+                    let password = String::from_utf8_lossy(password.trim_ascii());
+                    let mut flow = ListCardsFlow::new(
+                        &self.id,
+                        &config.http_version,
+                        &auth.username,
+                        &password,
+                    );
 
-                        match config.encryption {
-                            Encryption::None => {
-                                let mut tcp = Connector::connect(&config.hostname, config.port)?;
+                    match config.encryption {
+                        Encryption::None => {
+                            let mut tcp = Connector::connect(&config.hostname, config.port)?;
 
-                                while let Some(io) = flow.next() {
-                                    match io {
-                                        TcpIo::Read => {
-                                            tcp.read(&mut flow)?;
-                                        }
-                                        TcpIo::Write => {
-                                            tcp.write(&mut flow)?;
-                                        }
+                            while let Some(io) = flow.next() {
+                                match io {
+                                    TcpIo::Read => {
+                                        tcp.read(&mut flow)?;
                                     }
-                                }
-                            }
-                            Encryption::Rustls(_) => {
-                                let mut tls =
-                                    RustlsConnector::connect(&config.hostname, config.port)?;
-
-                                while let Some(io) = flow.next() {
-                                    match io {
-                                        TcpIo::Read => {
-                                            tls.read(&mut flow)?;
-                                        }
-                                        TcpIo::Write => {
-                                            tls.write(&mut flow)?;
-                                        }
+                                    TcpIo::Write => {
+                                        tcp.write(&mut flow)?;
                                     }
                                 }
                             }
                         }
+                        Encryption::Rustls(_) => {
+                            let mut tls = RustlsConnector::connect(&config.hostname, config.port)?;
 
-                        for response in flow.output()?.responses {
-                            cards.push(Card {
-                                id: response.href.value,
-                            });
+                            while let Some(io) = flow.next() {
+                                match io {
+                                    TcpIo::Read => {
+                                        tls.read(&mut flow)?;
+                                    }
+                                    TcpIo::Write => {
+                                        tls.write(&mut flow)?;
+                                    }
+                                }
+                            }
                         }
                     }
-                };
-            }
+
+                    Cards::try_from(flow)?
+                }
+            },
         };
 
-        printer.out(cards)?;
-
-        Ok(())
+        let table = CardsTable::from(cards);
+        printer.out(table)
     }
 }

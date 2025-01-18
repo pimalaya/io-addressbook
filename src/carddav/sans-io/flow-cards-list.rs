@@ -13,11 +13,11 @@ pub struct ListCardsFlow {
 
 impl ListCardsFlow {
     const BODY: &str = r#"
-        <c:addressbook-query xmlns="DAV:" xmlns:c="urn:ietf:params:xml:ns:carddav">
+        <C:addressbook-query xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
             <prop>
-                <getetag />
+                <C:address-data />
             </prop>
-        </c:addressbook-query>
+        </C:addressbook-query>
     "#;
 
     pub fn new(
