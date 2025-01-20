@@ -5,6 +5,8 @@ pub mod response;
 pub mod addressbook_home_set;
 #[path = "create-addressbook.rs"]
 pub mod create_addressbook;
+#[path = "create-card.rs"]
+pub mod create_card;
 #[path = "current-user-principal.rs"]
 pub mod current_user_principal;
 #[path = "delete-addressbook.rs"]
@@ -19,6 +21,7 @@ pub use self::{
     addressbook_home_set::AddressbookHomeSet,
     client::{Client, Config},
     create_addressbook::CreateAddressbook,
+    create_card::CreateCard,
     current_user_principal::CurrentUserPrincipal,
     delete_addressbook::DeleteAddressbook,
     list_addressbooks::ListAddressbooks,

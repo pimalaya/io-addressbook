@@ -10,6 +10,7 @@ pub mod tcp;
 
 use std::{
     collections::HashMap,
+    fmt,
     ops::{Deref, DerefMut},
 };
 
@@ -164,11 +165,46 @@ impl DerefMut for Addressbooks {
 //     }
 // }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Card {
     pub id: String,
-    pub props: HashMap<String, String>,
+    pub content: String,
+}
+
+impl fmt::Debug for Card {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Card")
+            .field("id", &self.id)
+            .field("content", &self.content)
+            .field(
+                "lines",
+                &self
+                    .content
+                    .lines()
+                    .filter_map(|line| {
+                        let line = line.trim();
+                        if line.trim().is_empty() {
+                            None
+                        } else {
+                            Some(line)
+                        }
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .finish()
+    }
+}
+
+impl Default for Card {
+    fn default() -> Self {
+        let uuid = Uuid::new_v4();
+
+        Self {
+            id: uuid.to_string(),
+            content: String::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]

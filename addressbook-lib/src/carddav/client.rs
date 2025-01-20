@@ -1,9 +1,9 @@
 use secrecy::SecretString;
 
-use crate::Addressbook;
+use crate::{Addressbook, Card};
 
 use super::{
-    AddressbookHomeSet, CreateAddressbook, CurrentUserPrincipal, DeleteAddressbook,
+    AddressbookHomeSet, CreateAddressbook, CreateCard, CurrentUserPrincipal, DeleteAddressbook,
     ListAddressbooks, UpdateAddressbook,
 };
 
@@ -105,6 +105,10 @@ impl Client {
 
     pub fn delete_addressbook(&self, id: impl AsRef<str>) -> DeleteAddressbook {
         DeleteAddressbook::new(&self.config, id)
+    }
+
+    pub fn create_card(&self, addressbook_id: impl AsRef<str>, card: Card) -> CreateCard {
+        CreateCard::new(&self.config, addressbook_id, card)
     }
 }
 
