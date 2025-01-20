@@ -11,8 +11,8 @@ pub mod current_user_principal;
 pub mod delete_addressbook;
 #[path = "list-addressbooks.rs"]
 pub mod list_addressbooks;
-// #[path = "update-addressbook.rs"]
-// pub mod update_addressbook;
+#[path = "update-addressbook.rs"]
+pub mod update_addressbook;
 
 #[doc(inline)]
 pub use self::{
@@ -22,5 +22,5 @@ pub use self::{
     current_user_principal::CurrentUserPrincipal,
     delete_addressbook::DeleteAddressbook,
     list_addressbooks::ListAddressbooks,
-    // update_addressbook::UpdateAddressbook,
+    update_addressbook::UpdateAddressbook,
 };

@@ -31,7 +31,9 @@ fn main() {
     }
 
     let current_user_principal = flow.output().unwrap();
+    println!();
     println!("current user principal: {current_user_principal:?}");
+
     let current_user_principal = current_user_principal.unwrap_or(String::from("/"));
 
     // Addressbook home set
@@ -50,5 +52,6 @@ fn main() {
     }
 
     let addressbook_home_set = flow.output().unwrap();
+    println!();
     println!("addressbook home set: {addressbook_home_set:?}");
 }

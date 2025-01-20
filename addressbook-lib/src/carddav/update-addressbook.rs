@@ -1,63 +1,97 @@
-use quick_xml::DeError as Error;
+use serde::Deserialize;
+use tracing::debug;
 
 use crate::{
-    carddav::response::{AddressbookProp, Multistatus},
+    carddav::response::MkcolResponse,
     http::{Request, SendReceiveFlow},
     tcp::{Flow, Io, Read, Write},
+    Addressbook,
 };
+
+use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct UpdateAddressbook {
+    addressbook: Addressbook,
     http: SendReceiveFlow,
 }
 
 impl UpdateAddressbook {
-    pub fn new(
-        uri: impl AsRef<str>,
-        version: impl AsRef<str>,
-        user: impl AsRef<str>,
-        pass: impl AsRef<str>,
-        name: Option<impl AsRef<str>>,
-        color: Option<impl AsRef<str>>,
-        desc: Option<impl AsRef<str>>,
-    ) -> Self {
-        let name = match name {
-            Some(name) => format!("<displayname>{}</displayname>", name.as_ref()),
+    pub fn new(config: &Config, addressbook: Addressbook) -> Self {
+        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let uri = &format!("{base_uri}/{}", addressbook.id);
+
+        let color = match &addressbook.color {
+            Some(color) => format!("<I:addressbook-color>{color}</I:addressbook-color>"),
             None => String::new(),
         };
 
-        let color = match color {
-            Some(color) => format!(
-                "<I:addressbook-color>{}</I:addressbook-color>",
-                color.as_ref()
-            ),
+        let desc = match &addressbook.desc {
+            Some(desc) => format!("<C:addressbook-description>{desc}</C:addressbook-description>"),
             None => String::new(),
         };
 
-        let desc = match desc {
-            Some(desc) => format!(
-                "<C:addressbook-description>{}</C:addressbook-description>",
-                desc.as_ref()
-            ),
-            None => String::new(),
+        let mut request = Request::proppatch(uri, config.http_version.as_ref()).content_type_xml();
+
+        if let Authentication::Basic(user, pass) = &config.authentication {
+            request = request.basic_auth(user, pass);
         };
 
-        let request = Request::proppatch(uri.as_ref(), version.as_ref())
-            .content_type_xml()
-            .basic_auth(user.as_ref(), pass.as_ref())
-            .body(&format!(
-                include_str!("./flow-addressbook-update.xml"),
-                name, color, desc,
-            ));
+        request = request.body(&format!(
+            include_str!("./update-addressbook.xml"),
+            &addressbook.name, color, desc,
+        ));
 
         Self {
+            addressbook,
             http: SendReceiveFlow::new(request),
         }
     }
 
-    pub fn output(self) -> Result<Multistatus<AddressbookProp>, Error> {
-        quick_xml::de::from_reader(self.http.take_body().as_slice())
+    pub fn output(mut self) -> Result<Addressbook, quick_xml::de::DeError> {
+        let body = self.http.take_body();
+
+        if body.is_empty() {
+            return Ok(self.addressbook);
+        }
+
+        let response: Response = quick_xml::de::from_reader(body.as_slice())?;
+
+        let Some(propstats) = response.propstats else {
+            return Ok(self.addressbook);
+        };
+
+        for propstat in propstats {
+            if !propstat.status.is_success() {
+                debug!(?propstat, "multistatus propstat error");
+                continue;
+            }
+
+            if let Some(name) = propstat.prop.displayname {
+                self.addressbook.name = name
+            }
+
+            if let Some(desc) = propstat.prop.addressbook_description {
+                self.addressbook.desc = Some(desc);
+            }
+
+            if let Some(color) = propstat.prop.addressbook_color {
+                self.addressbook.color = Some(color);
+            }
+        }
+
+        Ok(self.addressbook)
     }
+}
+
+pub type Response = MkcolResponse<Prop>;
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Prop {
+    pub displayname: Option<String>,
+    pub addressbook_color: Option<String>,
+    pub addressbook_description: Option<String>,
 }
 
 impl Flow for UpdateAddressbook {}

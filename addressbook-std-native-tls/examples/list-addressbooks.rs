@@ -26,5 +26,6 @@ fn main() {
     }
 
     let addressbooks = flow.output().unwrap();
+    println!();
     println!("{addressbooks:#?}");
 }

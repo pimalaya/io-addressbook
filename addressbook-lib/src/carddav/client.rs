@@ -4,7 +4,7 @@ use crate::Addressbook;
 
 use super::{
     AddressbookHomeSet, CreateAddressbook, CurrentUserPrincipal, DeleteAddressbook,
-    ListAddressbooks,
+    ListAddressbooks, UpdateAddressbook,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -67,8 +67,6 @@ impl Client {
             println!("using default addressbook home set URI {uri}");
         }
 
-        println!();
-
         Self { config }
     }
 
@@ -99,6 +97,10 @@ impl Client {
 
     pub fn list_addressbooks(&self, uri: impl AsRef<str>) -> ListAddressbooks {
         ListAddressbooks::new(&self.config, uri)
+    }
+
+    pub fn update_addressbook(&self, addressbook: Addressbook) -> UpdateAddressbook {
+        UpdateAddressbook::new(&self.config, addressbook)
     }
 
     pub fn delete_addressbook(&self, id: impl AsRef<str>) -> DeleteAddressbook {
