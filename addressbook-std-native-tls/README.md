@@ -1,6 +1,6 @@
-# 📇 addressbook-lib [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
+# 📇 addressbook-std-native-tls [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
 
-Rust library to manage contacts.
+Standard, blocking I/O connector over [native-tls](https://docs.rs/native-tls/latest/native_tls/) for [addressbook-lib](https://docs.rs/addressbook/latest/addressbook/).
 
 *🚧 Work in progress, stay tuned! 🚧*
 

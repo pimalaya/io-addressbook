@@ -21,6 +21,5 @@
     inputs:
     (import inputs.pimalaya).mkFlakeOutputs inputs {
       shell = ./shell.nix;
-      default = ./default.nix;
     };
 }

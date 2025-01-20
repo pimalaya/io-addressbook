@@ -9,4 +9,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-[Unreleased]: https://github.com/pimalaya/cardamum/compare/root...HEAD
+[Unreleased]: https://github.com/pimalaya/addressbook/compare/root...HEAD

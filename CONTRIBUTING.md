@@ -1,6 +1,6 @@
 # Contributing guide
 
-Thank you for investing your time in contributing to Cardamum CLI!
+Thank you for investing your time in contributing to addressbook Rust libraries!
 
 ## Development
 
@@ -34,4 +34,4 @@ cargo build --no-default-features --release
 
 ## Commit style
 
-Cardamum CLI follows the [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary).
+Addressbook libraries follow the [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary).
