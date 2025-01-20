@@ -1,5 +1,5 @@
 {
-  description = "CLI to manage contacts";
+  description = "Rust library to manage contacts";
 
   inputs = {
     # FIXME: when #358989 lands on nixos-unstable

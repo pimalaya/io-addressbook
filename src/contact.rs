@@ -1,36 +1,12 @@
 use std::{
-    borrow::Cow,
     collections::HashMap,
-    fmt,
     ops::{Deref, DerefMut},
 };
 
-use comfy_table::{presets, Cell, ContentArrangement, Row, Table};
-use crossterm::style::Color;
-use serde::{
-    de::{value::CowStrDeserializer, IntoDeserializer},
-    Deserialize, Serialize, Serializer,
-};
+use serde::{Deserialize, Serialize};
 use vparser::Parser;
 
 use crate::carddav::sans_io::{ListAddressbooksFlow, ListCardsFlow};
-
-/// The main configuration.
-#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
-pub struct Config {
-    /// The configuration of all the accounts.
-    pub accounts: HashMap<String, AccountConfig>,
-}
-
-/// The account configuration.
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
-pub struct AccountConfig {
-    /// The defaultness of the current account.
-    #[serde(default)]
-    pub default: bool,
-}
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -69,6 +45,23 @@ pub struct CardDavConfig {
     /// Authentication can be done using password or OAuth 2.0.
     #[serde(default)]
     pub encryption: Encryption,
+}
+
+/// The main configuration.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub struct Config {
+    /// The configuration of all the accounts.
+    pub accounts: HashMap<String, AccountConfig>,
+}
+
+/// The account configuration.
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+pub struct AccountConfig {
+    /// The defaultness of the current account.
+    #[serde(default)]
+    pub default: bool,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -161,149 +154,6 @@ impl DerefMut for Addressbooks {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct ListAddressbooksTableConfig {
-    pub preset: Option<String>,
-
-    pub id_color: Option<Color>,
-    pub name_color: Option<Color>,
-    pub desc_color: Option<Color>,
-}
-
-impl ListAddressbooksTableConfig {
-    pub fn preset(&self) -> &str {
-        self.preset.as_deref().unwrap_or(presets::ASCII_MARKDOWN)
-    }
-
-    pub fn id_color(&self) -> comfy_table::Color {
-        map_color(self.id_color.unwrap_or(Color::Red))
-    }
-
-    pub fn name_color(&self) -> comfy_table::Color {
-        map_color(self.name_color.unwrap_or(Color::Reset))
-    }
-
-    pub fn desc_color(&self) -> comfy_table::Color {
-        map_color(self.name_color.unwrap_or(Color::Green))
-    }
-}
-
-pub struct AddressbooksTable {
-    addressbooks: Addressbooks,
-    width: Option<u16>,
-    config: ListAddressbooksTableConfig,
-}
-
-impl AddressbooksTable {
-    pub fn with_some_width(mut self, width: Option<u16>) -> Self {
-        self.width = width;
-        self
-    }
-
-    pub fn with_some_preset(mut self, preset: Option<String>) -> Self {
-        self.config.preset = preset;
-        self
-    }
-
-    pub fn with_some_id_color(mut self, color: Option<Color>) -> Self {
-        self.config.id_color = color;
-        self
-    }
-
-    pub fn with_some_name_color(mut self, color: Option<Color>) -> Self {
-        self.config.name_color = color;
-        self
-    }
-
-    pub fn with_some_desc_color(mut self, color: Option<Color>) -> Self {
-        self.config.desc_color = color;
-        self
-    }
-}
-
-impl From<Addressbooks> for AddressbooksTable {
-    fn from(addressbooks: Addressbooks) -> Self {
-        Self {
-            addressbooks,
-            width: None,
-            config: Default::default(),
-        }
-    }
-}
-
-impl fmt::Display for AddressbooksTable {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut table = Table::new();
-
-        table
-            .load_preset(self.config.preset())
-            .set_content_arrangement(ContentArrangement::DynamicFullWidth)
-            .set_header(Row::from([
-                Cell::new("ID"),
-                Cell::new("NAME"),
-                Cell::new("DESC"),
-                Cell::new("COLOR"),
-            ]))
-            .add_rows(self.addressbooks.iter().map(|addressbook| {
-                let mut row = Row::new();
-                row.max_height(1);
-
-                row.add_cell(Cell::new(&addressbook.id).fg(self.config.id_color()));
-
-                if let Some(name) = &addressbook.name {
-                    row.add_cell(Cell::new(name).fg(self.config.name_color()));
-                } else {
-                    row.add_cell(Cell::new(String::new()));
-                }
-
-                if let Some(desc) = &addressbook.desc {
-                    row.add_cell(Cell::new(desc).fg(self.config.desc_color()));
-                } else {
-                    row.add_cell(Cell::new(String::new()));
-                }
-
-                let mut color_cell = Cell::new("");
-
-                if let Some(color) = &addressbook.color {
-                    color_cell = Cell::new(color);
-
-                    // hash tag (1) + rgb hex code (2 + 2 + 2)
-                    if color.len() >= 7 {
-                        let deserializer: CowStrDeserializer<serde::de::value::Error> =
-                            Cow::from(unsafe { color.get_unchecked(..7) }).into_deserializer();
-
-                        if let Ok(rgb) = Color::deserialize(deserializer) {
-                            color_cell = color_cell.bg(map_color(rgb));
-                        };
-                    }
-                }
-
-                row.add_cell(color_cell);
-
-                row
-            }));
-
-        if let Some(width) = self.width {
-            table.set_width(width);
-        }
-
-        writeln!(f)?;
-        write!(f, "{table}")?;
-        writeln!(f)?;
-        Ok(())
-    }
-}
-
-impl Serialize for AddressbooksTable {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.addressbooks.serialize(serializer)
-    }
-}
-
 impl TryFrom<ListAddressbooksFlow> for Addressbooks {
     type Error = quick_xml::DeError;
 
@@ -342,113 +192,6 @@ pub struct Card {
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Cards(Vec<Card>);
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct ListCardsTableConfig {
-    pub preset: Option<String>,
-    pub id_color: Option<Color>,
-    pub props: Option<Vec<String>>,
-}
-
-impl ListCardsTableConfig {
-    pub fn preset(&self) -> &str {
-        self.preset.as_deref().unwrap_or(presets::ASCII_MARKDOWN)
-    }
-
-    pub fn id_color(&self) -> comfy_table::Color {
-        map_color(self.id_color.unwrap_or(Color::Red))
-    }
-
-    pub fn props(&self) -> Vec<String> {
-        self.props.clone().unwrap_or(vec![
-            String::from("FN"),
-            String::from("EMAIL"),
-            String::from("TEL"),
-        ])
-    }
-}
-
-pub struct CardsTable {
-    cards: Cards,
-    width: Option<u16>,
-    config: ListCardsTableConfig,
-}
-
-impl CardsTable {
-    pub fn with_some_width(mut self, width: Option<u16>) -> Self {
-        self.width = width;
-        self
-    }
-
-    pub fn with_some_preset(mut self, preset: Option<String>) -> Self {
-        self.config.preset = preset;
-        self
-    }
-
-    pub fn with_some_id_color(mut self, color: Option<Color>) -> Self {
-        self.config.id_color = color;
-        self
-    }
-}
-
-impl From<Cards> for CardsTable {
-    fn from(cards: Cards) -> Self {
-        Self {
-            cards,
-            width: None,
-            config: Default::default(),
-        }
-    }
-}
-
-impl fmt::Display for CardsTable {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut table = Table::new();
-
-        let props = self.config.props();
-
-        let mut headers = vec![String::from("ID")];
-        headers.extend_from_slice(&props);
-
-        table
-            .load_preset(self.config.preset())
-            .set_content_arrangement(ContentArrangement::DynamicFullWidth)
-            .set_header(Row::from(headers))
-            .add_rows(self.cards.iter().map(|card| {
-                let mut row = Row::new();
-                row.max_height(1);
-
-                row.add_cell(Cell::new(&card.id).fg(self.config.id_color()));
-
-                for prop in &props {
-                    if let Some(prop) = card.props.get(prop) {
-                        row.add_cell(Cell::new(prop));
-                    }
-                }
-
-                row
-            }));
-
-        if let Some(width) = self.width {
-            table.set_width(width);
-        }
-
-        writeln!(f)?;
-        write!(f, "{table}")?;
-        writeln!(f)?;
-        Ok(())
-    }
-}
-
-impl Serialize for CardsTable {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.cards.serialize(serializer)
-    }
-}
 
 impl TryFrom<ListCardsFlow> for Cards {
     type Error = quick_xml::DeError;
@@ -493,29 +236,5 @@ impl Deref for Cards {
 impl DerefMut for Cards {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
-    }
-}
-
-fn map_color(color: Color) -> comfy_table::Color {
-    match color {
-        Color::Reset => comfy_table::Color::Reset,
-        Color::Black => comfy_table::Color::Black,
-        Color::DarkGrey => comfy_table::Color::DarkGrey,
-        Color::Red => comfy_table::Color::Red,
-        Color::DarkRed => comfy_table::Color::DarkRed,
-        Color::Green => comfy_table::Color::Green,
-        Color::DarkGreen => comfy_table::Color::DarkGreen,
-        Color::Yellow => comfy_table::Color::Yellow,
-        Color::DarkYellow => comfy_table::Color::DarkYellow,
-        Color::Blue => comfy_table::Color::Blue,
-        Color::DarkBlue => comfy_table::Color::DarkBlue,
-        Color::Magenta => comfy_table::Color::Magenta,
-        Color::DarkMagenta => comfy_table::Color::DarkMagenta,
-        Color::Cyan => comfy_table::Color::Cyan,
-        Color::DarkCyan => comfy_table::Color::DarkCyan,
-        Color::White => comfy_table::Color::White,
-        Color::Grey => comfy_table::Color::Grey,
-        Color::Rgb { r, g, b } => comfy_table::Color::Rgb { r, g, b },
-        Color::AnsiValue(n) => comfy_table::Color::AnsiValue(n),
     }
 }

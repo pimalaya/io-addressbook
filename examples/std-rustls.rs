@@ -1,6 +1,6 @@
 use std::{env, process::Command};
 
-use cardamum::{
+use addressbook::{
     carddav::sans_io::{
         AddressbookHomeSetFlow, CurrentUserPrincipalFlow, ListAddressbooksFlow, ListContactsFlow,
     },

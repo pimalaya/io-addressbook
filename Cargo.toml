@@ -1,15 +1,15 @@
 [package]
-name = "cardamum"
-description = "CLI to manage contacts"
+name = "addressbook"
+description = "Rust library to manage contacts"
 version = "0.1.0"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
-categories = ["command-line-utilities"]
-keywords = ["cli", "contact", "addressbook", "carddav", "webdav"]
+categories = []
+keywords = ["lib", "contact", "addressbook", "carddav", "webdav"]
 homepage = "https://pimalaya.org/"
-documentation = "https://github.com/pimalaya/cardamum/"
-repository = "https://github.com/pimalaya/cardamum/"
+documentation = "https://github.com/pimalaya/addressbook-lib/"
+repository = "https://github.com/pimalaya/addressbook-lib/"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]
@@ -18,10 +18,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = []
 
 [dev-dependencies]
-cardamum = { path = ".", features = [] }
-
-[build-dependencies]
-pimalaya-tui = { version = "0.2", default-features = false, features = ["build-envs"] }
+addressbook = { path = ".", features = [] }
 
 [dependencies]
 base64 = { version = "0.22", features = [] }
@@ -36,14 +33,4 @@ tracing = { version = "0.1", features = [] }
 uuid = { version = "1", features = ["v4"] }
 vparser = { version = "1", features = [] }
 
-# CLI
-clap = { version = "4.4", features = ["derive", "env", "wrap_help"] }
-clap_complete = { version = "4.4", features = [] }
-clap_mangen = { version = "0.2", features = [] }
-color-eyre = { version = "0.6", features = [] }
-comfy-table = { version = "7.1", features = [] }
-crossterm = { version = "0.27", features = ["serde"] }
-pimalaya-tui = { version = "0.2", default-features = false, features = ["cli", "config", "path", "tracing"] }
-
 [patch.crates-io]
-pimalaya-tui.git = "https://github.com/pimalaya/tui"
