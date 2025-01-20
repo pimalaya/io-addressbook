@@ -13,6 +13,8 @@ pub mod current_user_principal;
 pub mod delete_addressbook;
 #[path = "list-addressbooks.rs"]
 pub mod list_addressbooks;
+#[path = "read-card.rs"]
+pub mod read_card;
 #[path = "update-addressbook.rs"]
 pub mod update_addressbook;
 
@@ -25,5 +27,6 @@ pub use self::{
     current_user_principal::CurrentUserPrincipal,
     delete_addressbook::DeleteAddressbook,
     list_addressbooks::ListAddressbooks,
+    read_card::ReadCard,
     update_addressbook::UpdateAddressbook,
 };

@@ -35,13 +35,11 @@ fn main() {
 
     let mut card = Card::default();
     card.content = format!(
-        r#"
-            BEGIN:VCARD
-            VERSION:3.0
-            UID:{}
-            FN:Test
-            END:VCARD
-       "#,
+        "BEGIN:VCARD
+VERSION:3.0
+UID:{}
+FN:Test
+END:VCARD",
         card.id
     );
 
@@ -61,6 +59,23 @@ fn main() {
     let card = flow.output();
     println!();
     println!("created card: {card:#?}");
+
+    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut flow = client.read_card(&addressbook.id, &card.id);
+    while let Some(io) = flow.next() {
+        match io {
+            tcp::Io::Read => {
+                tcp.read(&mut flow).unwrap();
+            }
+            tcp::Io::Write => {
+                tcp.write(&mut flow).unwrap();
+            }
+        }
+    }
+
+    let card = flow.output().unwrap();
+    println!();
+    println!("read card: {card:#?}");
 
     // let mut tcp = Connector::connect(&client.config).unwrap();
     // let mut flow = client.delete_card(&addressbook.id, &card.id);

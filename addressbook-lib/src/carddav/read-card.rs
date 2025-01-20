@@ -1,42 +1,50 @@
 use std::string::FromUtf8Error;
 
 use crate::{
-    http::sans_io::{Request, SendReceiveFlow},
-    tcp::sans_io::{Flow, Io, Read, Write},
+    http::{Request, SendReceiveFlow},
+    tcp::{Flow, Io, Read, Write},
+    Card,
 };
 
+use super::{client::Authentication, Config};
+
 #[derive(Debug)]
-pub struct ReadCardFlow {
+pub struct ReadCard {
+    id: String,
     http: SendReceiveFlow,
 }
 
-impl ReadCardFlow {
+impl ReadCard {
     const BODY: &str = "";
 
-    pub fn new(
-        uri: impl AsRef<str>,
-        version: impl AsRef<str>,
-        user: impl AsRef<str>,
-        pass: impl AsRef<str>,
-    ) -> Self {
-        let request = Request::get(uri.as_ref(), version.as_ref())
-            .content_type_xml()
-            .basic_auth(user.as_ref(), pass.as_ref())
-            .body(Self::BODY);
+    pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> Self {
+        let card_id = card_id.to_string();
+        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let uri = &format!("{base_uri}/{}/{card_id}.vcf", addressbook_id.as_ref());
+
+        let mut request = Request::get(uri.as_ref(), config.http_version.as_ref());
+
+        if let Authentication::Basic(user, pass) = &config.authentication {
+            request = request.basic_auth(user, pass);
+        };
 
         Self {
-            http: SendReceiveFlow::new(request),
+            id: card_id,
+            http: SendReceiveFlow::new(request.body(Self::BODY)),
         }
     }
 
-    pub fn output(self) -> Result<String, FromUtf8Error> {
-        String::from_utf8(self.http.take_body())
+    pub fn output(self) -> Result<Card, FromUtf8Error> {
+        Ok(Card {
+            id: self.id,
+            content: String::from_utf8(self.http.take_body())?,
+        })
     }
 }
 
-impl Flow for ReadCardFlow {}
+impl Flow for ReadCard {}
 
-impl Write for ReadCardFlow {
+impl Write for ReadCard {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -46,7 +54,7 @@ impl Write for ReadCardFlow {
     }
 }
 
-impl Read for ReadCardFlow {
+impl Read for ReadCard {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -56,7 +64,7 @@ impl Read for ReadCardFlow {
     }
 }
 
-impl Iterator for ReadCardFlow {
+impl Iterator for ReadCard {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {
