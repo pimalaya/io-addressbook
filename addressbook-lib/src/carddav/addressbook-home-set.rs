@@ -7,8 +7,9 @@ use crate::{
 };
 
 use super::{
+    client::Authentication,
     response::{HrefProp, Multistatus},
-    Authentication, Config,
+    Config,
 };
 
 #[derive(Debug)]

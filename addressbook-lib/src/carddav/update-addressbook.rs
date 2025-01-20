@@ -1,17 +1,17 @@
 use quick_xml::DeError as Error;
 
 use crate::{
-    carddav::serde::{AddressbookProp, Multistatus},
-    http::sans_io::{Request, SendReceiveFlow},
-    tcp::sans_io::{Flow, Io, Read, Write},
+    carddav::response::{AddressbookProp, Multistatus},
+    http::{Request, SendReceiveFlow},
+    tcp::{Flow, Io, Read, Write},
 };
 
 #[derive(Debug)]
-pub struct UpdateAddressbookFlow {
+pub struct UpdateAddressbook {
     http: SendReceiveFlow,
 }
 
-impl UpdateAddressbookFlow {
+impl UpdateAddressbook {
     pub fn new(
         uri: impl AsRef<str>,
         version: impl AsRef<str>,
@@ -60,9 +60,9 @@ impl UpdateAddressbookFlow {
     }
 }
 
-impl Flow for UpdateAddressbookFlow {}
+impl Flow for UpdateAddressbook {}
 
-impl Write for UpdateAddressbookFlow {
+impl Write for UpdateAddressbook {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -72,7 +72,7 @@ impl Write for UpdateAddressbookFlow {
     }
 }
 
-impl Read for UpdateAddressbookFlow {
+impl Read for UpdateAddressbook {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -82,7 +82,7 @@ impl Read for UpdateAddressbookFlow {
     }
 }
 
-impl Iterator for UpdateAddressbookFlow {
+impl Iterator for UpdateAddressbook {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

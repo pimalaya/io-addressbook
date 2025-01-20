@@ -14,6 +14,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// The main configuration.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
@@ -95,13 +96,26 @@ pub struct BasicAuthenticationConfig {
     pub password: String,
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Addressbook {
     pub id: String,
-    pub name: Option<String>,
+    pub name: String,
     pub desc: Option<String>,
     pub color: Option<String>,
+}
+
+impl Default for Addressbook {
+    fn default() -> Self {
+        let uuid = Uuid::new_v4();
+
+        Self {
+            id: uuid.to_string(),
+            name: uuid.to_string(),
+            desc: None,
+            color: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]

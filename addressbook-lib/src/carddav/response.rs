@@ -5,15 +5,27 @@ use serde::Deserialize;
 #[derive(Clone, Debug, Deserialize)]
 pub struct Multistatus<T> {
     #[serde(rename = "response")]
-    pub responses: Option<Vec<Response<T>>>,
+    pub responses: Option<Vec<PropstatResponse<T>>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Response<T> {
+pub struct MkcolResponse<T> {
+    #[serde(rename = "propstat")]
+    pub propstats: Option<Vec<Propstat<T>>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct PropstatResponse<T> {
     pub href: Href,
     pub status: Option<Status>,
     #[serde(rename = "propstat")]
     pub propstats: Option<Vec<Propstat<T>>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct StatusResponse {
+    pub href: Href,
+    pub status: Status,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -35,23 +47,6 @@ pub struct Href {
 
 ////////////////////////////////////////////////////////////////
 // TODO: clean me
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct DeleteAddressbook {
-    #[serde(rename = "response")]
-    pub responses: Vec<DeleteAddressbookResponse>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct DeleteAddressbookResponse {
-    pub href: Href,
-    pub status: Status,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct MkcolResponse<T> {
-    pub propstat: Propstat<T>,
-}
 
 // impl Multistatus<AddressbookProp> {
 //     pub fn get_addressbook_hrefs(&self) -> impl Iterator<Item = &str> {

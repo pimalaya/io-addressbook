@@ -8,7 +8,7 @@ use crate::{
     Addressbook, Addressbooks,
 };
 
-use super::{Authentication, Config};
+use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct ListAddressbooks {
@@ -76,7 +76,7 @@ impl ListAddressbooks {
                 }
 
                 if let Some(name) = propstat.prop.displayname {
-                    addressbook.name = Some(name);
+                    addressbook.name = name
                 }
 
                 if let Some(desc) = propstat.prop.addressbook_description {

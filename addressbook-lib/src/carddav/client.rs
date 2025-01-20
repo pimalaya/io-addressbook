@@ -1,6 +1,11 @@
 use secrecy::SecretString;
 
-use super::{AddressbookHomeSet, CurrentUserPrincipal, ListAddressbooks};
+use crate::Addressbook;
+
+use super::{
+    AddressbookHomeSet, CreateAddressbook, CurrentUserPrincipal, DeleteAddressbook,
+    ListAddressbooks,
+};
 
 #[derive(Clone, Debug, Default)]
 pub struct Client {
@@ -54,8 +59,12 @@ impl Client {
             println!("using no authentication");
         }
 
-        if std::env::var("URI").is_err() {
-            std::env::set_var("URI", "/");
+        if let Ok(uri) = std::env::var("URI") {
+            println!("using custom addressbook home set URI {uri}");
+            config.addressbook_home_set_uri = uri;
+        } else {
+            let uri = &config.addressbook_home_set_uri;
+            println!("using default addressbook home set URI {uri}");
         }
 
         println!();
@@ -84,8 +93,16 @@ impl Client {
         AddressbookHomeSet::new(&self.config, uri)
     }
 
+    pub fn create_addressbook(&self, addressbook: Addressbook) -> CreateAddressbook {
+        CreateAddressbook::new(&self.config, addressbook)
+    }
+
     pub fn list_addressbooks(&self, uri: impl AsRef<str>) -> ListAddressbooks {
         ListAddressbooks::new(&self.config, uri)
+    }
+
+    pub fn delete_addressbook(&self, id: impl AsRef<str>) -> DeleteAddressbook {
+        DeleteAddressbook::new(&self.config, id)
     }
 }
 
@@ -96,6 +113,8 @@ pub struct Config {
 
     /// The CardDAV server host port.
     pub port: u16,
+
+    pub addressbook_home_set_uri: String,
 
     /// The HTTP version to use when communicating with the CardDAV
     /// server.
@@ -114,6 +133,7 @@ impl Default for Config {
         Self {
             hostname: String::from("localhost"),
             port: 8001,
+            addressbook_home_set_uri: String::from("/"),
             http_version: HttpVersion::default(),
             authentication: Authentication::default(),
         }
