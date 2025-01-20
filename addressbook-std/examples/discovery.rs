@@ -15,7 +15,7 @@ fn main() {
     // Current user principal
 
     // NOTE: ideally, this should be needed once in order to re-use
-    // the connection. It depends on the HTTP protocol returned by the
+    // the connection. It depends on the HTTP version returned by the
     // server.
     let mut tcp = Connector::connect(&client.config).unwrap();
     let mut flow = client.current_user_principal();

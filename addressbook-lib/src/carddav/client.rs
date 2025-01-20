@@ -1,6 +1,6 @@
 use secrecy::SecretString;
 
-use super::{AddressbookHomeSet, CurrentUserPrincipal};
+use super::{AddressbookHomeSet, CurrentUserPrincipal, ListAddressbooks};
 
 #[derive(Clone, Debug, Default)]
 pub struct Client {
@@ -17,12 +17,18 @@ impl Client {
         let mut config = Config::default();
 
         if let Ok(hostname) = std::env::var("HOST") {
+            println!("using custom HOST {hostname}");
             config.hostname = hostname;
+        } else {
+            println!("using default HOST {}", config.hostname);
         }
 
         if let Ok(port) = std::env::var("PORT") {
             let port = port.parse::<u16>().expect("should be an integer");
+            println!("using custom PORT {port}");
             config.port = port;
+        } else {
+            println!("using default PORT {}", config.port);
         }
 
         if let Ok(v) = std::env::var("HTTP_VERSION") {
@@ -31,16 +37,28 @@ impl Client {
             } else {
                 HttpVersion::V1_1
             };
+            println!("using custom HTTP_VERSION {:?}", config.http_version);
+        } else {
+            println!("using default HTTP_VERSION {:?}", config.http_version);
         }
 
         if let (Ok(user), Ok(pass)) = (std::env::var("USER"), std::env::var("PASS")) {
+            println!("using basic authentication {user}:{{{pass}}}");
             let mut args = pass.split_whitespace();
             let program = args.next().unwrap();
             let pass = std::process::Command::new(program).args(args).output();
             let pass = pass.expect("should get password from command").stdout;
             let pass = String::from_utf8_lossy(pass.trim_ascii()).to_string();
             config.authentication = Authentication::Basic(user, pass.into());
+        } else {
+            println!("using no authentication");
         }
+
+        if std::env::var("URI").is_err() {
+            std::env::set_var("URI", "/");
+        }
+
+        println!();
 
         Self { config }
     }
@@ -59,11 +77,15 @@ impl Client {
     }
 
     pub fn current_user_principal(&self) -> CurrentUserPrincipal {
-        CurrentUserPrincipal::new(&self.config)
+        CurrentUserPrincipal::new(&self.config, "/")
     }
 
     pub fn addressbook_home_set(&self, uri: impl AsRef<str>) -> AddressbookHomeSet {
         AddressbookHomeSet::new(&self.config, uri)
+    }
+
+    pub fn list_addressbooks(&self, uri: impl AsRef<str>) -> ListAddressbooks {
+        ListAddressbooks::new(&self.config, uri)
     }
 }
 
@@ -74,15 +96,6 @@ pub struct Config {
 
     /// The CardDAV server host port.
     pub port: u16,
-
-    /// The addressbooks root url.
-    ///
-    /// Also known as the addressbook home set, it represents the
-    /// common base URL to all addressbooks registered on the CardDAV
-    /// server by the user being authenticated in this account.
-    ///
-    /// See [`CardDavConfig::auth`].
-    pub root_url: String,
 
     /// The HTTP version to use when communicating with the CardDAV
     /// server.
@@ -101,7 +114,6 @@ impl Default for Config {
         Self {
             hostname: String::from("localhost"),
             port: 8001,
-            root_url: String::from("/"),
             http_version: HttpVersion::default(),
             authentication: Authentication::default(),
         }

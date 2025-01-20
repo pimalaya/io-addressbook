@@ -6,7 +6,6 @@ pub mod http;
 pub mod tcp;
 
 ////////////////////////////////////////////////////////////////
-
 // TODO: sort me
 
 use std::{
@@ -96,7 +95,7 @@ pub struct BasicAuthenticationConfig {
     pub password: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Addressbook {
     pub id: String,

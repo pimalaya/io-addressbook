@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use thiserror::Error;
 use tracing::{debug, trace};
 
 use crate::{
@@ -12,31 +11,17 @@ use super::{
     Authentication, Config,
 };
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("cannot parse addressbook home set response body")]
-    ParseAddressbookHomeSetResponseError(#[source] quick_xml::de::DeError),
-    #[error("cannot find missing or empty addressbook home set responses")]
-    FindAddressbookHomeSetResponseError,
-}
-
 #[derive(Debug)]
 pub struct AddressbookHomeSet {
     http: SendReceiveFlow,
 }
 
 impl AddressbookHomeSet {
-    const BODY: &str = r#"
-        <propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-            <prop>
-                <C:addressbook-home-set />
-            </prop>
-        </propfind>
-    "#;
+    const BODY: &'static str = include_str!("./addressbook-home-set.xml");
 
-    pub fn new(config: &Config, url: impl AsRef<str>) -> Self {
+    pub fn new(config: &Config, uri: impl AsRef<str>) -> Self {
         let mut request =
-            Request::propfind(url.as_ref(), config.http_version.as_ref()).content_type_xml();
+            Request::propfind(uri.as_ref(), config.http_version.as_ref()).content_type_xml();
 
         if let Authentication::Basic(user, pass) = &config.authentication {
             request = request.basic_auth(user, pass);
@@ -47,16 +32,14 @@ impl AddressbookHomeSet {
         }
     }
 
-    pub fn output(self) -> Result<Option<String>, Error> {
+    pub fn output(self) -> Result<Option<String>, quick_xml::de::DeError> {
         let body = self.http.take_body();
 
-        let response: Result<Response, quick_xml::de::DeError> =
-            quick_xml::de::from_reader(body.as_slice());
+        let response: Response = quick_xml::de::from_reader(body.as_slice())?;
 
-        let responses = response
-            .map_err(Error::ParseAddressbookHomeSetResponseError)?
-            .responses
-            .ok_or(Error::FindAddressbookHomeSetResponseError)?;
+        let Some(responses) = response.responses else {
+            return Ok(None);
+        };
 
         for response in responses {
             trace!(?response, "process multistatus");

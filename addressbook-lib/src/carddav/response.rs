@@ -126,29 +126,6 @@ mod date_parser {
     }
 }
 
-// Current user principal structs
-
-// Addressbook home set structs
-
-// Addressbook structs
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct AddressbookProp {
-    pub resourcetype: Option<AddressbookResourceType>,
-    pub displayname: Option<String>,
-    pub addressbook_color: Option<String>,
-    pub addressbook_description: Option<String>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct AddressbookResourceType {
-    pub addressbook: Option<Addressbook>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Addressbook {}
-
 // Address data structs
 
 #[derive(Clone, Debug, Deserialize)]

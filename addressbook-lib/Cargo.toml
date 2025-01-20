@@ -26,9 +26,9 @@ base64 = { version = "0.22", features = [] }
 chrono = { version = "0.4", features = [] }
 memchr = { version = "2.7.4", features = [] }
 quick-xml = { version = "0.37", features = ["serialize"] }
+secrecy = { version = "0.10", features = [] }
 serde = { version = "1", features = ["derive"] }
 thiserror = { version = "2", features = [] }
 tracing = { version = "0.1", features = [] }
 uuid = { version = "1", features = ["v4"] }
 vparser = { version = "1", features = [] }
-secrecy = { version = "0.10", features = [] }

@@ -1,6 +1,6 @@
 # 📇 addressbook [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
 
-Rust library to manage contacts
+Rust library to manage contacts.
 
 *🚧 Work in progress, stay tuned! 🚧*
 
