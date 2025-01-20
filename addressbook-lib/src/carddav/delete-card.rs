@@ -1,5 +1,5 @@
 use crate::{
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
 };
 
@@ -7,7 +7,7 @@ use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct DeleteCard {
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl DeleteCard {
@@ -27,7 +27,7 @@ impl DeleteCard {
         };
 
         Self {
-            http: SendReceiveFlow::new(request.body(Self::BODY)),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 }

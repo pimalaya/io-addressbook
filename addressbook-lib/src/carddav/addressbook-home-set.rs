@@ -2,7 +2,7 @@ use serde::Deserialize;
 use tracing::{debug, trace};
 
 use crate::{
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
 };
 
@@ -14,7 +14,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct AddressbookHomeSet {
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl AddressbookHomeSet {
@@ -29,7 +29,7 @@ impl AddressbookHomeSet {
         };
 
         Self {
-            http: SendReceiveFlow::new(request.body(Self::BODY)),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 

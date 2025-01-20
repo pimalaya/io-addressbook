@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 use crate::{
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
 };
 
@@ -9,7 +9,7 @@ use super::{client::Authentication, response::StatusResponse, Config};
 
 #[derive(Debug)]
 pub struct DeleteAddressbook {
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl DeleteAddressbook {
@@ -26,7 +26,7 @@ impl DeleteAddressbook {
         };
 
         Self {
-            http: SendReceiveFlow::new(request.body(Self::BODY)),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 

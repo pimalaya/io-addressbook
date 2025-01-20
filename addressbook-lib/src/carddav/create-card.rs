@@ -1,5 +1,5 @@
 use crate::{
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
     Card,
 };
@@ -9,7 +9,7 @@ use super::{client::Authentication, Config};
 #[derive(Debug)]
 pub struct CreateCard {
     card: Card,
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl CreateCard {
@@ -26,7 +26,7 @@ impl CreateCard {
 
         Self {
             card,
-            http: SendReceiveFlow::new(request),
+            http: SendHttpRequest::new(request),
         }
     }
 

@@ -1,7 +1,6 @@
-#[path = "flow-send-receive.rs"]
-mod flow_send_receive;
 mod request;
+mod send;
 mod state;
 
 #[doc(inline)]
-pub use self::{flow_send_receive::*, request::*, state::*};
+pub use self::{request::*, send::*, state::*};

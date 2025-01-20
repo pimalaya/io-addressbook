@@ -1,7 +1,7 @@
 use std::string::FromUtf8Error;
 
 use crate::{
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
     Card,
 };
@@ -11,7 +11,7 @@ use super::{client::Authentication, Config};
 #[derive(Debug)]
 pub struct ReadCard {
     id: String,
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl ReadCard {
@@ -30,7 +30,7 @@ impl ReadCard {
 
         Self {
             id: card_id,
-            http: SendReceiveFlow::new(request.body(Self::BODY)),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 

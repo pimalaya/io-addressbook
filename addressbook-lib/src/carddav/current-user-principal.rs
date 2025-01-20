@@ -2,7 +2,7 @@ use serde::Deserialize;
 use tracing::{debug, trace};
 
 use crate::{
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
 };
 
@@ -13,7 +13,7 @@ use super::{
 
 #[derive(Debug)]
 pub struct CurrentUserPrincipal {
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl CurrentUserPrincipal {
@@ -28,7 +28,7 @@ impl CurrentUserPrincipal {
         };
 
         Self {
-            http: SendReceiveFlow::new(request.body(Self::BODY)),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 

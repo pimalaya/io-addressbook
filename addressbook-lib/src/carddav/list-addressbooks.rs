@@ -3,7 +3,7 @@ use tracing::{debug, trace};
 
 use crate::{
     carddav::response::Multistatus,
-    http::{Request, SendReceiveFlow},
+    http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
     Addressbook, Addressbooks,
 };
@@ -12,7 +12,7 @@ use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct ListAddressbooks {
-    http: SendReceiveFlow,
+    http: SendHttpRequest,
 }
 
 impl ListAddressbooks {
@@ -28,7 +28,7 @@ impl ListAddressbooks {
         };
 
         Self {
-            http: SendReceiveFlow::new(request.body(Self::BODY)),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 

@@ -14,7 +14,7 @@ const CRLF_CRLF: [u8; 4] = [CR, LF, CR, LF];
 const CONTENT_LENGTH: &[u8] = b"Content-Length";
 
 #[derive(Debug)]
-pub struct SendReceiveFlow {
+pub struct SendHttpRequest {
     state: Option<State>,
 
     write_buffer: Vec<u8>,
@@ -29,7 +29,7 @@ pub struct SendReceiveFlow {
     response_body_length: usize,
 }
 
-impl SendReceiveFlow {
+impl SendHttpRequest {
     pub fn new(request: Request) -> Self {
         Self {
             state: Some(State::SerializeHttpRequest),
@@ -76,9 +76,9 @@ impl SendReceiveFlow {
     }
 }
 
-impl Flow for SendReceiveFlow {}
+impl Flow for SendHttpRequest {}
 
-impl Write for SendReceiveFlow {
+impl Write for SendHttpRequest {
     fn get_buffer(&mut self) -> &[u8] {
         &self.write_buffer
     }
@@ -88,7 +88,7 @@ impl Write for SendReceiveFlow {
     }
 }
 
-impl Read for SendReceiveFlow {
+impl Read for SendHttpRequest {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         &mut self.read_buffer
     }
@@ -98,7 +98,7 @@ impl Read for SendReceiveFlow {
     }
 }
 
-impl Iterator for SendReceiveFlow {
+impl Iterator for SendHttpRequest {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {
