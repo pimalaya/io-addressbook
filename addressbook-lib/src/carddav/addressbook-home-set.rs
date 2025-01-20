@@ -3,41 +3,40 @@ use thiserror::Error;
 use tracing::{debug, trace};
 
 use crate::{
-    carddav::serde::Multistatus,
-    http::sans_io::{Request, SendReceiveFlow},
-    tcp::sans_io::{Flow, Io, Read, Write},
+    http::{Request, SendReceiveFlow},
+    tcp::{Flow, Io, Read, Write},
 };
 
 use super::{
-    client::{Authentication, Config},
-    serde::Href,
+    response::{HrefProp, Multistatus},
+    Authentication, Config,
 };
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("cannot parse current user principal response body")]
-    ParseCurrentUserPrincipalResponseError(#[source] quick_xml::de::DeError),
-    #[error("cannot find missing or empty current user principal responses")]
-    FindCurrentUserPrincipalResponseError,
+    #[error("cannot parse addressbook home set response body")]
+    ParseAddressbookHomeSetResponseError(#[source] quick_xml::de::DeError),
+    #[error("cannot find missing or empty addressbook home set responses")]
+    FindAddressbookHomeSetResponseError,
 }
 
 #[derive(Debug)]
-pub struct CurrentUserPrincipal {
+pub struct AddressbookHomeSet {
     http: SendReceiveFlow,
 }
 
-impl CurrentUserPrincipal {
+impl AddressbookHomeSet {
     const BODY: &str = r#"
-        <propfind xmlns="DAV:">
+        <propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
             <prop>
-                <current-user-principal />
+                <C:addressbook-home-set />
             </prop>
         </propfind>
     "#;
 
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: &Config, url: impl AsRef<str>) -> Self {
         let mut request =
-            Request::propfind(&config.root_url, config.http_version.as_ref()).content_type_xml();
+            Request::propfind(url.as_ref(), config.http_version.as_ref()).content_type_xml();
 
         if let Authentication::Basic(user, pass) = &config.authentication {
             request = request.basic_auth(user, pass);
@@ -51,13 +50,13 @@ impl CurrentUserPrincipal {
     pub fn output(self) -> Result<Option<String>, Error> {
         let body = self.http.take_body();
 
-        let response: Result<CurrentUserPrincipalResponse, quick_xml::de::DeError> =
+        let response: Result<Response, quick_xml::de::DeError> =
             quick_xml::de::from_reader(body.as_slice());
 
         let responses = response
-            .map_err(Error::ParseCurrentUserPrincipalResponseError)?
+            .map_err(Error::ParseAddressbookHomeSetResponseError)?
             .responses
-            .ok_or(Error::FindCurrentUserPrincipalResponseError)?;
+            .ok_or(Error::FindAddressbookHomeSetResponseError)?;
 
         for response in responses {
             trace!(?response, "process multistatus");
@@ -79,7 +78,7 @@ impl CurrentUserPrincipal {
                     continue;
                 }
 
-                return Ok(Some(propstat.prop.current_user_principal.href.value));
+                return Ok(Some(propstat.prop.addressbook_home_set.href.value));
             }
         }
 
@@ -87,22 +86,17 @@ impl CurrentUserPrincipal {
     }
 }
 
-pub type CurrentUserPrincipalResponse = Multistatus<CurrentUserPrincipalProp>;
+pub type Response = Multistatus<Prop>;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct CurrentUserPrincipalProp {
-    pub current_user_principal: CurrentUserPrincipalHref,
+pub struct Prop {
+    pub addressbook_home_set: HrefProp,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-pub struct CurrentUserPrincipalHref {
-    pub href: Href,
-}
+impl Flow for AddressbookHomeSet {}
 
-impl Flow for CurrentUserPrincipal {}
-
-impl Write for CurrentUserPrincipal {
+impl Write for AddressbookHomeSet {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -112,7 +106,7 @@ impl Write for CurrentUserPrincipal {
     }
 }
 
-impl Read for CurrentUserPrincipal {
+impl Read for AddressbookHomeSet {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -122,7 +116,7 @@ impl Read for CurrentUserPrincipal {
     }
 }
 
-impl Iterator for CurrentUserPrincipal {
+impl Iterator for AddressbookHomeSet {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

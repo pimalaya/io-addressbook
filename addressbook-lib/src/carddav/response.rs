@@ -3,6 +3,40 @@ use memchr::memmem;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct Multistatus<T> {
+    #[serde(rename = "response")]
+    pub responses: Option<Vec<Response<T>>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Response<T> {
+    pub href: Href,
+    pub status: Option<Status>,
+    #[serde(rename = "propstat")]
+    pub propstats: Option<Vec<Propstat<T>>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Propstat<T> {
+    pub prop: T,
+    pub status: Status,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct HrefProp {
+    pub href: Href,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Href {
+    #[serde(rename = "$value")]
+    pub value: String,
+}
+
+////////////////////////////////////////////////////////////////
+// TODO: clean me
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct DeleteAddressbook {
     #[serde(rename = "response")]
     pub responses: Vec<DeleteAddressbookResponse>,
@@ -12,12 +46,6 @@ pub struct DeleteAddressbook {
 pub struct DeleteAddressbookResponse {
     pub href: Href,
     pub status: Status,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Multistatus<T> {
-    #[serde(rename = "response")]
-    pub responses: Option<Vec<Response<T>>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -33,14 +61,6 @@ pub struct MkcolResponse<T> {
 //     }
 // }
 
-#[derive(Clone, Debug, Deserialize)]
-pub struct Response<T> {
-    pub href: Href,
-    pub status: Option<Status>,
-    #[serde(rename = "propstat")]
-    pub propstats: Option<Vec<Propstat<T>>>,
-}
-
 // impl Response<AddressbookProp> {
 //     pub fn get_addressbook_href(&self) -> Option<&str> {
 //         for propstat in &self.propstats {
@@ -54,18 +74,6 @@ pub struct Response<T> {
 //         None
 //     }
 // }
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Propstat<T> {
-    pub prop: T,
-    pub status: Status,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Href {
-    #[serde(rename = "$value")]
-    pub value: String,
-}
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Displayname {
@@ -121,17 +129,6 @@ mod date_parser {
 // Current user principal structs
 
 // Addressbook home set structs
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct AddressbookHomeSetProp {
-    pub addressbook_home_set: AddressbookHomeSet,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct AddressbookHomeSet {
-    pub href: Href,
-}
 
 // Addressbook structs
 

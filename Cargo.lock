@@ -11,8 +11,6 @@ dependencies = [
  "chrono",
  "memchr",
  "quick-xml",
- "rustls",
- "rustls-platform-verifier",
  "secrecy",
  "serde",
  "thiserror 2.0.11",
@@ -20,6 +18,26 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "vparser",
+]
+
+[[package]]
+name = "addressbook-std"
+version = "0.1.0"
+dependencies = [
+ "addressbook",
+ "addressbook-std",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "addressbook-std-rustls"
+version = "0.1.0"
+dependencies = [
+ "addressbook",
+ "addressbook-std-rustls",
+ "rustls",
+ "rustls-platform-verifier",
+ "tracing-subscriber",
 ]
 
 [[package]]

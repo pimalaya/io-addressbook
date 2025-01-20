@@ -4,8 +4,8 @@ use memchr::memmem;
 use tracing::trace;
 
 use crate::{
-    http::sans_io::CRLF,
-    tcp::sans_io::{Flow, Io, Read, Write},
+    http::CRLF,
+    tcp::{Flow, Io, Read, Write},
 };
 
 use super::{Request, State, CR, LF};

@@ -1,15 +1,48 @@
 use secrecy::SecretString;
 
-use super::CurrentUserPrincipal;
+use super::{AddressbookHomeSet, CurrentUserPrincipal};
 
 #[derive(Clone, Debug, Default)]
 pub struct Client {
-    config: Config,
+    pub config: Config,
 }
 
 impl Client {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn new_from_envs() -> Self {
+        let mut config = Config::default();
+
+        if let Ok(hostname) = std::env::var("HOST") {
+            config.hostname = hostname;
+        }
+
+        if let Ok(port) = std::env::var("PORT") {
+            let port = port.parse::<u16>().expect("should be an integer");
+            config.port = port;
+        }
+
+        if let Ok(v) = std::env::var("HTTP_VERSION") {
+            config.http_version = if v == "1.0" {
+                HttpVersion::V1_0
+            } else {
+                HttpVersion::V1_1
+            };
+        }
+
+        if let (Ok(user), Ok(pass)) = (std::env::var("USER"), std::env::var("PASS")) {
+            let mut args = pass.split_whitespace();
+            let program = args.next().unwrap();
+            let pass = std::process::Command::new(program).args(args).output();
+            let pass = pass.expect("should get password from command").stdout;
+            let pass = String::from_utf8_lossy(pass.trim_ascii()).to_string();
+            config.authentication = Authentication::Basic(user, pass.into());
+        }
+
+        Self { config }
     }
 
     pub fn set_basic_authentication(&mut self, user: impl ToString, pass: impl Into<SecretString>) {
@@ -27,6 +60,10 @@ impl Client {
 
     pub fn current_user_principal(&self) -> CurrentUserPrincipal {
         CurrentUserPrincipal::new(&self.config)
+    }
+
+    pub fn addressbook_home_set(&self, uri: impl AsRef<str>) -> AddressbookHomeSet {
+        AddressbookHomeSet::new(&self.config, uri)
     }
 }
 
