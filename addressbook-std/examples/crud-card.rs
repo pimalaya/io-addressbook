@@ -73,9 +73,35 @@ END:VCARD",
         }
     }
 
-    let card = flow.output().unwrap();
+    let mut card = flow.output().unwrap();
     println!();
     println!("read card: {card:#?}");
+
+    card.content = format!(
+        "BEGIN:VCARD
+VERSION:3.0
+UID:{}
+FN:Test updated
+END:VCARD",
+        card.id
+    );
+
+    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut flow = client.update_card(&addressbook.id, card);
+    while let Some(io) = flow.next() {
+        match io {
+            tcp::Io::Read => {
+                tcp.read(&mut flow).unwrap();
+            }
+            tcp::Io::Write => {
+                tcp.write(&mut flow).unwrap();
+            }
+        }
+    }
+
+    let card = flow.output();
+    println!();
+    println!("updated card: {card:#?}");
 
     // let mut tcp = Connector::connect(&client.config).unwrap();
     // let mut flow = client.delete_card(&addressbook.id, &card.id);

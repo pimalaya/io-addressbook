@@ -4,7 +4,7 @@ use crate::{Addressbook, Card};
 
 use super::{
     AddressbookHomeSet, CreateAddressbook, CreateCard, CurrentUserPrincipal, DeleteAddressbook,
-    ListAddressbooks, ReadCard, UpdateAddressbook,
+    ListAddressbooks, ReadCard, UpdateAddressbook, UpdateCard,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -113,6 +113,10 @@ impl Client {
 
     pub fn read_card(&self, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> ReadCard {
         ReadCard::new(&self.config, addressbook_id, card_id)
+    }
+
+    pub fn update_card(&self, addressbook_id: impl AsRef<str>, card: Card) -> UpdateCard {
+        UpdateCard::new(&self.config, addressbook_id, card)
     }
 }
 
