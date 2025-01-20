@@ -103,20 +103,36 @@ END:VCARD",
     println!();
     println!("updated card: {card:#?}");
 
-    // let mut tcp = Connector::connect(&client.config).unwrap();
-    // let mut flow = client.delete_card(&addressbook.id, &card.id);
-    // while let Some(io) = flow.next() {
-    //     match io {
-    //         tcp::Io::Read => {
-    //             tcp.read(&mut flow).unwrap();
-    //         }
-    //         tcp::Io::Write => {
-    //             tcp.write(&mut flow).unwrap();
-    //         }
-    //     }
-    // }
+    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut flow = client.delete_card(&addressbook.id, &card.id);
+    while let Some(io) = flow.next() {
+        match io {
+            tcp::Io::Read => {
+                tcp.read(&mut flow).unwrap();
+            }
+            tcp::Io::Write => {
+                tcp.write(&mut flow).unwrap();
+            }
+        }
+    }
 
-    // let success = flow.output().unwrap();
-    // println!();
-    // println!("card {} deleted: {success}", card.id);
+    println!();
+    println!("card {} deleted", card.id);
+
+    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut flow = client.delete_addressbook(&addressbook.id);
+    while let Some(io) = flow.next() {
+        match io {
+            tcp::Io::Read => {
+                tcp.read(&mut flow).unwrap();
+            }
+            tcp::Io::Write => {
+                tcp.write(&mut flow).unwrap();
+            }
+        }
+    }
+
+    let success = flow.output().unwrap();
+    println!();
+    println!("addressbook {} deleted: {success}", addressbook.id);
 }
