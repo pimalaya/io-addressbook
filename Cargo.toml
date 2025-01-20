@@ -8,3 +8,5 @@ members = [
 
 [patch.crates-io]
 addressbook.path = "./addressbook-lib"
+addressbook-std.path = "./addressbook-std"
+addressbook-std-rustls.path = "./addressbook-std-rustls"
