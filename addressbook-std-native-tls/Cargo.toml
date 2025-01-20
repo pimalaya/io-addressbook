@@ -1,0 +1,28 @@
+[package]
+name = "addressbook-std-native-tls"
+description = "Standard I/O connector over native-tls for addressbook-lib"
+version = "0.1.0"
+authors = ["soywod <clement.douin@posteo.net>"]
+edition = "2021"
+license = "MIT"
+categories = []
+keywords = ["lib", "contact", "addressbook", "carddav", "webdav"]
+homepage = "https://pimalaya.org/"
+documentation = "https://github.com/pimalaya/addressbook-lib/"
+repository = "https://github.com/pimalaya/addressbook-lib/"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+vendored = ["native-tls/vendored"]
+
+[dev-dependencies]
+addressbook-std-native-tls.path = "."
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dependencies]
+addressbook = "0.1"
+native-tls = "0.2"
+thiserror = "2"
