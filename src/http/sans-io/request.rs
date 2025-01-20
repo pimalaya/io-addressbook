@@ -1,5 +1,6 @@
 use base64::{prelude::BASE64_STANDARD, Engine};
 use chrono::Utc;
+use secrecy::{ExposeSecret, SecretString};
 
 pub const CR: u8 = b'\r';
 pub const LF: u8 = b'\n';
@@ -67,7 +68,8 @@ impl Request {
         Self::new(Self::REPORT, uri, version)
     }
 
-    pub fn basic_auth(mut self, user: &str, pass: &str) -> Self {
+    pub fn basic_auth(mut self, user: &str, pass: &SecretString) -> Self {
+        let pass = pass.expose_secret();
         let auth = BASE64_STANDARD.encode(format!("{user}:{pass}"));
         self.bytes.extend(b"Authorization: Basic ");
         self.bytes.extend(auth.as_bytes());
@@ -106,6 +108,12 @@ impl Request {
         self.bytes.extend(CRLF);
         self.bytes.extend(body.as_bytes());
         self
+    }
+}
+
+impl AsRef<[u8]> for Request {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
     }
 }
 

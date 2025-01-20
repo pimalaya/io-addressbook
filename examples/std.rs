@@ -1,14 +1,17 @@
-use std::{env, process::Command};
+use std::{env, io::stderr, process::Command};
 
 use addressbook::{
-    carddav::sans_io::{
-        AddressbookHomeSetFlow, CurrentUserPrincipalFlow, ListAddressbooksFlow, ListContactsFlow,
-    },
+    carddav::Client,
     contact::HttpVersion,
     tcp::{sans_io::Io as TcpIo, std::Connector},
 };
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 fn main() {
+    tracing_subscriber::registry()
+        .with(fmt::layer().with_writer(stderr))
+        .init();
+
     let host = env::var("HOST").unwrap_or(String::from("localhost"));
     println!("using host: {host:?}");
 
@@ -27,14 +30,16 @@ fn main() {
     let user = env::var("USER").unwrap_or(String::from("test"));
     println!("using user: {user:?}");
 
-    let password = env::var("PASSWORD_COMMAND").expect("missing env PASSWORD_COMMAND");
-    println!("using password command: {password:?}");
-    let mut args = password.split_whitespace();
+    let pass = env::var("PASSWORD_COMMAND").expect("missing env PASSWORD_COMMAND");
+    println!("using password command: {pass:?}");
+    let mut args = pass.split_whitespace();
     let program = args.next().unwrap();
-    let password = Command::new(program).args(args).output().unwrap().stdout;
-    let password = String::from_utf8_lossy(password.trim_ascii());
+    let pass = Command::new(program).args(args).output().unwrap().stdout;
+    let pass = String::from_utf8_lossy(pass.trim_ascii()).to_string();
 
-    println!("starting the example");
+    // Define CardDAV client
+
+    let client = Client::new().with_basic_authentication(user, pass);
 
     // Current user principal
 
@@ -42,7 +47,7 @@ fn main() {
     // the connection. It depends on the HTTP protocol returned by the
     // server.
     let mut tcp = Connector::connect(&host, port).unwrap();
-    let mut flow = CurrentUserPrincipalFlow::new("/", &version, &user, &password);
+    let mut flow = client.current_user_principal();
 
     while let Some(io) = flow.next() {
         match io {
@@ -55,109 +60,93 @@ fn main() {
         }
     }
 
-    let output = flow.output().unwrap();
+    let url = flow.output().unwrap();
 
-    println!("current user principal output: {output:#?}");
+    println!("current user principal: {url:?}");
 
-    let current_user_principal_url = output
-        .responses
-        .into_iter()
-        .next()
-        .unwrap()
-        .propstats
-        .into_iter()
-        .next()
-        .unwrap()
-        .prop
-        .current_user_principal
-        .href
-        .value;
+    // // Addressbook home set
 
-    println!("current user principal: {current_user_principal_url:?}");
+    // let mut tcp = Connector::connect(&host, port).unwrap();
+    // let mut flow =
+    //     AddressbookHomeSetFlow::new(current_user_principal_url, &version, &user, &password);
 
-    // Addressbook home set
+    // while let Some(io) = flow.next() {
+    //     match io {
+    //         TcpIo::Read => {
+    //             tcp.read(&mut flow).unwrap();
+    //         }
+    //         TcpIo::Write => {
+    //             tcp.write(&mut flow).unwrap();
+    //         }
+    //     }
+    // }
 
-    let mut tcp = Connector::connect(&host, port).unwrap();
-    let mut flow =
-        AddressbookHomeSetFlow::new(current_user_principal_url, &version, &user, &password);
+    // let output = flow.output().unwrap();
 
-    while let Some(io) = flow.next() {
-        match io {
-            TcpIo::Read => {
-                tcp.read(&mut flow).unwrap();
-            }
-            TcpIo::Write => {
-                tcp.write(&mut flow).unwrap();
-            }
-        }
-    }
+    // println!("addressbook home set output: {output:#?}");
 
-    let output = flow.output().unwrap();
+    // let addressbook_home_set_url = output
+    //     .responses
+    //     .into_iter()
+    //     .next()
+    //     .unwrap()
+    //     .propstats
+    //     .into_iter()
+    //     .next()
+    //     .unwrap()
+    //     .prop
+    //     .addressbook_home_set
+    //     .href
+    //     .value;
 
-    println!("addressbook home set output: {output:#?}");
+    // println!("addressbook home set: {addressbook_home_set_url:?}");
 
-    let addressbook_home_set_url = output
-        .responses
-        .into_iter()
-        .next()
-        .unwrap()
-        .propstats
-        .into_iter()
-        .next()
-        .unwrap()
-        .prop
-        .addressbook_home_set
-        .href
-        .value;
+    // // Addressbooks
 
-    println!("addressbook home set: {addressbook_home_set_url:?}");
+    // let mut tcp = Connector::connect(&host, port).unwrap();
+    // let mut flow = ListAddressbooksFlow::new(addressbook_home_set_url, &version, &user, &password);
 
-    // Addressbooks
+    // while let Some(io) = flow.next() {
+    //     match io {
+    //         TcpIo::Read => {
+    //             tcp.read(&mut flow).unwrap();
+    //         }
+    //         TcpIo::Write => {
+    //             tcp.write(&mut flow).unwrap();
+    //         }
+    //     }
+    // }
 
-    let mut tcp = Connector::connect(&host, port).unwrap();
-    let mut flow = ListAddressbooksFlow::new(addressbook_home_set_url, &version, &user, &password);
+    // let output = flow.output().unwrap();
 
-    while let Some(io) = flow.next() {
-        match io {
-            TcpIo::Read => {
-                tcp.read(&mut flow).unwrap();
-            }
-            TcpIo::Write => {
-                tcp.write(&mut flow).unwrap();
-            }
-        }
-    }
+    // println!("addressbooks output: {output:#?}");
 
-    let output = flow.output().unwrap();
+    // let addressbook_hrefs = output.get_addressbook_hrefs().collect::<Vec<_>>();
 
-    println!("addressbooks output: {output:#?}");
+    // println!(
+    //     "found {} addressbooks: {addressbook_hrefs:#?}",
+    //     addressbook_hrefs.len()
+    // );
 
-    let addressbook_hrefs = output.get_addressbook_hrefs().collect::<Vec<_>>();
+    // // List CardDAV contacts
 
-    println!(
-        "found {} addressbooks: {addressbook_hrefs:#?}",
-        addressbook_hrefs.len()
-    );
+    // let addressbook_href = addressbook_hrefs.into_iter().next().unwrap();
 
-    // List CardDAV contacts
+    // let mut tcp = Connector::connect(&host, port).unwrap();
+    // let mut flow = ListContactsFlow::new(addressbook_href, &version, &user, &password);
 
-    let addressbook_href = addressbook_hrefs.into_iter().next().unwrap();
+    // while let Some(io) = flow.next() {
+    //     match io {
+    //         TcpIo::Read => {
+    //             tcp.read(&mut flow).unwrap();
+    //         }
+    //         TcpIo::Write => {
+    //             tcp.write(&mut flow).unwrap();
+    //         }
+    //     }
+    // }
 
-    let mut tcp = Connector::connect(&host, port).unwrap();
-    let mut flow = ListContactsFlow::new(addressbook_href, &version, &user, &password);
+    // let output = flow.output().unwrap();
 
-    while let Some(io) = flow.next() {
-        match io {
-            TcpIo::Read => {
-                tcp.read(&mut flow).unwrap();
-            }
-            TcpIo::Write => {
-                tcp.write(&mut flow).unwrap();
-            }
-        }
-    }
-
-    let output = flow.output().unwrap();
-
-    println!("contacts output: {output:#?}");
+    // println!("contacts output: {output:#?}");
 }

@@ -19,6 +19,7 @@ default = []
 
 [dev-dependencies]
 addressbook = { path = ".", features = [] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies]
 base64 = { version = "0.22", features = [] }
@@ -32,5 +33,6 @@ thiserror = { version = "2", features = [] }
 tracing = { version = "0.1", features = [] }
 uuid = { version = "1", features = ["v4"] }
 vparser = { version = "1", features = [] }
+secrecy = { version = "0.10", features = [] }
 
 [patch.crates-io]

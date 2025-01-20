@@ -1,6 +1,7 @@
 use std::mem;
 
 use memchr::memmem;
+use tracing::trace;
 
 use crate::{
     http::sans_io::CRLF,
@@ -109,7 +110,7 @@ impl Iterator for SendReceiveFlow {
                     let mut request = Request::default();
                     mem::swap(&mut request, &mut self.request);
                     self.write_buffer = request.into();
-                    // println!("request:\n{}", String::from_utf8_lossy(&self.write_buffer));
+                    trace!(request = ?String::from_utf8_lossy(&self.write_buffer), "send full");
                     return Some(Io::Write);
                 }
                 Some(State::SendHttpRequest) => {
@@ -124,12 +125,9 @@ impl Iterator for SendReceiveFlow {
                     let bytes = &self.read_buffer[..self.read_bytes_count];
                     self.response_bytes.extend(bytes);
 
-                    // println!(
-                    //     "bytes({}/{}):\n{}",
-                    //     self.read_bytes_count,
-                    //     self.read_buffer.len(),
-                    //     String::from_utf8_lossy(bytes)
-                    // );
+                    let i = self.read_bytes_count;
+                    let n = self.read_buffer.len();
+                    trace!(response = ?String::from_utf8_lossy(bytes), "receive chunk {i}/{n}");
 
                     if self.response_body_start == 0 {
                         let body_start = memmem::find(&self.response_bytes, &CRLF_CRLF);

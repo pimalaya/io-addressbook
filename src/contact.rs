@@ -4,48 +4,6 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use vparser::Parser;
-
-use crate::carddav::sans_io::{ListAddressbooksFlow, ListCardsFlow};
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct CardDavConfig {
-    /// The CardDAV server hostname.
-    #[serde(alias = "host")]
-    pub hostname: String,
-
-    /// The CardDAV server host port.
-    pub port: u16,
-
-    /// The addressbooks root url.
-    ///
-    /// Also known as the addressbook home set, it represents the
-    /// common base URL to all addressbooks registered on the CardDAV
-    /// server by the user being authenticated in this account.
-    ///
-    /// See [`CardDavConfig::auth`].
-    pub url: String,
-
-    /// The HTTP version to use when communicating with the CardDAV
-    /// server.
-    ///
-    /// Supported versions: 1.0, 1.1
-    #[serde(default)]
-    pub http_version: HttpVersion,
-
-    /// The CardDAV server authentication configuration.
-    ///
-    /// Authentication can be done using password or OAuth 2.0.
-    #[serde(default, alias = "auth")]
-    pub authentication: Authentication,
-
-    /// The CardDAV server authentication configuration.
-    ///
-    /// Authentication can be done using password or OAuth 2.0.
-    #[serde(default)]
-    pub encryption: Encryption,
-}
 
 /// The main configuration.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize, Serialize)]
@@ -154,33 +112,33 @@ impl DerefMut for Addressbooks {
     }
 }
 
-impl TryFrom<ListAddressbooksFlow> for Addressbooks {
-    type Error = quick_xml::DeError;
+// impl TryFrom<ListAddressbooksFlow> for Addressbooks {
+//     type Error = quick_xml::DeError;
 
-    fn try_from(flow: ListAddressbooksFlow) -> Result<Self, Self::Error> {
-        let mut addressbooks = Vec::new();
-        let output = flow.output()?;
+//     fn try_from(flow: ListAddressbooksFlow) -> Result<Self, Self::Error> {
+//         let mut addressbooks = Vec::new();
+//         let output = flow.output()?;
 
-        for response in output.responses {
-            let id = &response.href.value;
+//         for response in output.responses {
+//             let id = &response.href.value;
 
-            for propstat in response.propstats {
-                if let Some(t) = propstat.prop.resourcetype {
-                    if t.addressbook.is_some() {
-                        addressbooks.push(Addressbook {
-                            id: id.clone(),
-                            name: propstat.prop.displayname,
-                            desc: propstat.prop.addressbook_description,
-                            color: propstat.prop.addressbook_color,
-                        })
-                    }
-                }
-            }
-        }
+//             for propstat in response.propstats {
+//                 if let Some(t) = propstat.prop.resourcetype {
+//                     if t.addressbook.is_some() {
+//                         addressbooks.push(Addressbook {
+//                             id: id.clone(),
+//                             name: propstat.prop.displayname,
+//                             desc: propstat.prop.addressbook_description,
+//                             color: propstat.prop.addressbook_color,
+//                         })
+//                     }
+//                 }
+//             }
+//         }
 
-        Ok(Self(addressbooks))
-    }
-}
+//         Ok(Self(addressbooks))
+//     }
+// }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -193,37 +151,37 @@ pub struct Card {
 #[serde(rename_all = "kebab-case")]
 pub struct Cards(Vec<Card>);
 
-impl TryFrom<ListCardsFlow> for Cards {
-    type Error = quick_xml::DeError;
+// impl TryFrom<ListCardsFlow> for Cards {
+//     type Error = quick_xml::DeError;
 
-    fn try_from(flow: ListCardsFlow) -> Result<Self, Self::Error> {
-        let mut cards = Vec::new();
-        let output = flow.output()?;
+//     fn try_from(flow: ListCardsFlow) -> Result<Self, Self::Error> {
+//         let mut cards = Vec::new();
+//         let output = flow.output()?;
 
-        for response in output.responses {
-            let id = &response.href.value;
+//         for response in output.responses {
+//             let id = &response.href.value;
 
-            for propstat in response.propstats {
-                if let Some(vcf) = propstat.prop.address_data {
-                    let mut card = Card {
-                        id: id.clone(),
-                        props: Default::default(),
-                    };
+//             for propstat in response.propstats {
+//                 if let Some(vcf) = propstat.prop.address_data {
+//                     let mut card = Card {
+//                         id: id.clone(),
+//                         props: Default::default(),
+//                     };
 
-                    for line in Parser::new(&vcf.value) {
-                        let name = line.name().to_string();
-                        let value = line.value().to_string();
-                        card.props.insert(name, value);
-                    }
+//                     for line in Parser::new(&vcf.value) {
+//                         let name = line.name().to_string();
+//                         let value = line.value().to_string();
+//                         card.props.insert(name, value);
+//                     }
 
-                    cards.push(card)
-                }
-            }
-        }
+//                     cards.push(card)
+//                 }
+//             }
+//         }
 
-        Ok(Self(cards))
-    }
-}
+//         Ok(Self(cards))
+//     }
+// }
 
 impl Deref for Cards {
     type Target = Vec<Card>;
