@@ -14,7 +14,7 @@ impl DeleteCard {
     const BODY: &'static str = "";
 
     pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl AsRef<str>) -> Self {
-        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let base_uri = config.home_uri.trim_end_matches('/');
         let uri = &format!(
             "{base_uri}/{}/{}.vcf",
             addressbook_id.as_ref(),

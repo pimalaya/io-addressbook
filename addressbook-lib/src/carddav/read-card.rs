@@ -19,7 +19,7 @@ impl ReadCard {
 
     pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> Self {
         let card_id = card_id.to_string();
-        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let base_uri = config.home_uri.trim_end_matches('/');
         let uri = &format!("{base_uri}/{}/{card_id}.vcf", addressbook_id.as_ref());
 
         let mut request = Request::get(uri.as_ref(), config.http_version.as_ref());

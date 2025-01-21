@@ -16,7 +16,7 @@ impl DeleteAddressbook {
     const BODY: &str = "";
 
     pub fn new(config: &Config, id: impl AsRef<str>) -> Self {
-        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let base_uri = config.home_uri.trim_end_matches('/');
         let uri = &format!("{base_uri}/{}", id.as_ref());
 
         let mut request = Request::delete(uri, config.http_version.as_ref()).content_type_xml();

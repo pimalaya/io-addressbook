@@ -1,4 +1,4 @@
-use std::{env, io::stderr};
+use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp};
 use addressbook_std_rustls::Connector;
@@ -12,7 +12,7 @@ fn main() {
 
     let client = Client::new_from_envs();
     let mut tcp = Connector::connect(&client.config).unwrap();
-    let mut flow = client.list_addressbooks(env::var("URI").unwrap());
+    let mut flow = client.list_addressbooks();
 
     while let Some(io) = flow.next() {
         match io {

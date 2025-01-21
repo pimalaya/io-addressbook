@@ -18,7 +18,7 @@ pub struct UpdateAddressbook {
 
 impl UpdateAddressbook {
     pub fn new(config: &Config, addressbook: Addressbook) -> Self {
-        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let base_uri = config.home_uri.trim_end_matches('/');
         let uri = &format!("{base_uri}/{}", addressbook.id);
 
         let color = match &addressbook.color {

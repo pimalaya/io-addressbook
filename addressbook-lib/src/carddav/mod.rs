@@ -1,4 +1,4 @@
-mod client;
+pub mod client;
 pub mod response;
 
 #[path = "addressbook-home-set.rs"]

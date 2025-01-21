@@ -14,7 +14,7 @@ pub struct CreateCard {
 
 impl CreateCard {
     pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card: Card) -> Self {
-        let base_uri = config.addressbook_home_set_uri.trim_end_matches('/');
+        let base_uri = config.home_uri.trim_end_matches('/');
         let uri = &format!("{base_uri}/{}/{}.vcf", addressbook_id.as_ref(), card.id);
         let mut request = Request::put(uri, config.http_version.as_ref()).content_type_vcard();
 

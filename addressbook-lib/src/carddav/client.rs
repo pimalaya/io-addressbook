@@ -1,4 +1,4 @@
-use secrecy::SecretString;
+use secrecy::{ExposeSecret, SecretString};
 
 use crate::{Addressbook, Card};
 
@@ -7,7 +7,7 @@ use super::{
     DeleteCard, ListAddressbooks, ReadCard, UpdateAddressbook, UpdateCard,
 };
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Client {
     pub config: Config,
 }
@@ -61,9 +61,9 @@ impl Client {
 
         if let Ok(uri) = std::env::var("URI") {
             println!("using custom addressbook home set URI {uri}");
-            config.addressbook_home_set_uri = uri;
+            config.home_uri = uri;
         } else {
-            let uri = &config.addressbook_home_set_uri;
+            let uri = &config.home_uri;
             println!("using default addressbook home set URI {uri}");
         }
 
@@ -95,8 +95,8 @@ impl Client {
         CreateAddressbook::new(&self.config, addressbook)
     }
 
-    pub fn list_addressbooks(&self, uri: impl AsRef<str>) -> ListAddressbooks {
-        ListAddressbooks::new(&self.config, uri)
+    pub fn list_addressbooks(&self) -> ListAddressbooks {
+        ListAddressbooks::new(&self.config)
     }
 
     pub fn update_addressbook(&self, addressbook: Addressbook) -> UpdateAddressbook {
@@ -128,7 +128,7 @@ impl Client {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Config {
     /// The CardDAV server hostname.
     pub hostname: String,
@@ -136,7 +136,7 @@ pub struct Config {
     /// The CardDAV server host port.
     pub port: u16,
 
-    pub addressbook_home_set_uri: String,
+    pub home_uri: String,
 
     /// The HTTP version to use when communicating with the CardDAV
     /// server.
@@ -155,7 +155,7 @@ impl Default for Config {
         Self {
             hostname: String::from("localhost"),
             port: 8001,
-            addressbook_home_set_uri: String::from("/"),
+            home_uri: String::from("/"),
             http_version: HttpVersion::default(),
             authentication: Authentication::default(),
         }
@@ -183,4 +183,18 @@ pub enum Authentication {
     #[default]
     None,
     Basic(String, SecretString),
+}
+
+impl Eq for Authentication {}
+
+impl PartialEq for Authentication {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::None, Self::None) => true,
+            (Self::Basic(user1, pass1), Self::Basic(user2, pass2)) => {
+                user1 == user2 && pass1.expose_secret() == pass2.expose_secret()
+            }
+            _ => false,
+        }
+    }
 }

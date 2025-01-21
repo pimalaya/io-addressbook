@@ -18,8 +18,8 @@ pub struct ListAddressbooks {
 impl ListAddressbooks {
     const BODY: &str = include_str!("./list-addressbooks.xml");
 
-    pub fn new(config: &Config, uri: impl AsRef<str>) -> Self {
-        let mut request = Request::propfind(uri.as_ref(), config.http_version.as_ref())
+    pub fn new(config: &Config) -> Self {
+        let mut request = Request::propfind(&config.home_uri, config.http_version.as_ref())
             .content_type_xml()
             .depth("1");
 
