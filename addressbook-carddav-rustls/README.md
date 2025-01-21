@@ -1,6 +1,6 @@
-# 📇 addressbook-std [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
+# 📇 addressbook-carddav-rustls [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
 
-Standard, blocking I/O connector for [addressbook-lib](https://docs.rs/addressbook/latest/addressbook/).
+Standard CardDAV I/O connector over [Rustls](https://docs.rs/rustls/latest/rustls/) for [addressbook-lib](https://docs.rs/addressbook/latest/addressbook/).
 
 *🚧 Work in progress, stay tuned! 🚧*
 

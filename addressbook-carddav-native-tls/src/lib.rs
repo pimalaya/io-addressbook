@@ -3,16 +3,16 @@ use std::{
     net::TcpStream,
 };
 
-use addressbook::{carddav::Config, tcp};
+use addressbook::tcp;
 use native_tls::{TlsConnector, TlsStream};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error(transparent)]
-    TlsError(#[from] native_tls::Error),
+    NativeTlsError(#[from] native_tls::Error),
     #[error(transparent)]
-    TlsHandshakeError(#[from] native_tls::HandshakeError<TcpStream>),
+    NativeTlsHandshakeError(#[from] native_tls::HandshakeError<TcpStream>),
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 }
@@ -25,11 +25,10 @@ pub struct Connector {
 }
 
 impl Connector {
-    pub fn connect(config: &Config) -> Result<Self> {
-        let addr = (config.hostname.as_str(), config.port);
+    pub fn connect(hostname: impl AsRef<str>, port: u16) -> Result<Self> {
         let conn = TlsConnector::new()?;
-        let sock = TcpStream::connect(addr)?;
-        let stream = conn.connect(&config.hostname, sock)?;
+        let sock = TcpStream::connect((hostname.as_ref(), port))?;
+        let stream = conn.connect(hostname.as_ref(), sock)?;
 
         Ok(Self { stream })
     }

@@ -1,7 +1,7 @@
 use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp, Addressbook, Card};
-use addressbook_std_rustls::Connector;
+use addressbook_carddav::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn main() {
@@ -16,7 +16,7 @@ fn main() {
     addressbook.name = "Test".into();
     addressbook.desc = Some("Testing addressbook".into());
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.create_addressbook(addressbook);
     while let Some(io) = flow.next() {
         match io {
@@ -43,7 +43,7 @@ END:VCARD",
         card.id
     );
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.create_card(&addressbook.id, card);
     while let Some(io) = flow.next() {
         match io {
@@ -60,7 +60,7 @@ END:VCARD",
     println!();
     println!("created card: {card:#?}");
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.read_card(&addressbook.id, &card.id);
     while let Some(io) = flow.next() {
         match io {
@@ -86,7 +86,7 @@ END:VCARD",
         card.id
     );
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.update_card(&addressbook.id, card);
     while let Some(io) = flow.next() {
         match io {
@@ -103,7 +103,7 @@ END:VCARD",
     println!();
     println!("updated card: {card:#?}");
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.delete_card(&addressbook.id, &card.id);
     while let Some(io) = flow.next() {
         match io {
@@ -119,7 +119,7 @@ END:VCARD",
     println!();
     println!("card {} deleted", card.id);
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.delete_addressbook(&addressbook.id);
     while let Some(io) = flow.next() {
         match io {

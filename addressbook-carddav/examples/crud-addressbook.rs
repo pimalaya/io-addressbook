@@ -1,7 +1,7 @@
 use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp, Addressbook};
-use addressbook_std_native_tls::Connector;
+use addressbook_carddav::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn main() {
@@ -16,7 +16,7 @@ fn main() {
     addressbook.name = "Test".into();
     addressbook.desc = Some("Testing addressbook".into());
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.create_addressbook(addressbook);
     while let Some(io) = flow.next() {
         match io {
@@ -37,7 +37,7 @@ fn main() {
     addressbook.desc = Some("".into());
     addressbook.color = Some("#abcdef".into());
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.update_addressbook(addressbook);
     while let Some(io) = flow.next() {
         match io {
@@ -54,7 +54,7 @@ fn main() {
     println!();
     println!("updated addressbook: {addressbook:#?}");
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.delete_addressbook(&addressbook.id);
     while let Some(io) = flow.next() {
         match io {

@@ -1,7 +1,7 @@
 use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp, Addressbook, Card};
-use addressbook_std::Connector;
+use addressbook_carddav_rustls::{Connector, CryptoProvider};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn main() {
@@ -12,19 +12,33 @@ fn main() {
 
     let client = Client::new_from_envs();
 
+    let crypto =
+        std::env::var("CRYPTO").expect("CRYPTO env var should be either `aws-lc` or `ring`");
+    let crypto = match crypto.as_str() {
+        #[cfg(feature = "aws-lc")]
+        "aws-lc" => CryptoProvider::AwsLc,
+        #[cfg(not(feature = "aws-lc"))]
+        "aws-lc" => panic!("missing feature `aws-lc`"),
+        #[cfg(feature = "ring")]
+        "ring" => CryptoProvider::Ring,
+        #[cfg(not(feature = "ring"))]
+        "ring" => panic!("missing feature `ring`"),
+        unknown => panic!("unknown crypto provider {unknown} (valid: aws-lc, ring)"),
+    };
+
     let mut addressbook = Addressbook::default();
     addressbook.name = "Test".into();
     addressbook.desc = Some("Testing addressbook".into());
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.create_addressbook(addressbook);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
@@ -43,15 +57,15 @@ END:VCARD",
         card.id
     );
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.create_card(&addressbook.id, card);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
@@ -60,15 +74,15 @@ END:VCARD",
     println!();
     println!("created card: {card:#?}");
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.read_card(&addressbook.id, &card.id);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
@@ -86,15 +100,15 @@ END:VCARD",
         card.id
     );
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.update_card(&addressbook.id, card);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
@@ -103,15 +117,15 @@ END:VCARD",
     println!();
     println!("updated card: {card:#?}");
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.delete_card(&addressbook.id, &card.id);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
@@ -119,15 +133,15 @@ END:VCARD",
     println!();
     println!("card {} deleted", card.id);
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.delete_addressbook(&addressbook.id);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }

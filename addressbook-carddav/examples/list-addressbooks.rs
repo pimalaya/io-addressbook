@@ -1,7 +1,7 @@
 use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp};
-use addressbook_std_native_tls::Connector;
+use addressbook_carddav::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn main() {
@@ -11,7 +11,7 @@ fn main() {
         .init();
 
     let client = Client::new_from_envs();
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.list_addressbooks();
 
     while let Some(io) = flow.next() {

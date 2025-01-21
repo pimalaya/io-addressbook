@@ -1,7 +1,7 @@
 use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp};
-use addressbook_std::Connector;
+use addressbook_carddav::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
     // NOTE: ideally, this should be needed once in order to re-use
     // the connection. It depends on the HTTP version returned by the
     // server.
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.current_user_principal();
     while let Some(io) = flow.next() {
         match io {
@@ -31,14 +31,14 @@ fn main() {
     }
 
     let current_user_principal = flow.output().unwrap();
-    println!("current user principal: {current_user_principal:?}");
     println!();
+    println!("current user principal: {current_user_principal:?}");
 
     let current_user_principal = current_user_principal.unwrap_or(String::from("/"));
 
     // Addressbook home set
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.addressbook_home_set(current_user_principal);
     while let Some(io) = flow.next() {
         match io {
@@ -52,6 +52,5 @@ fn main() {
     }
 
     let addressbook_home_set = flow.output().unwrap();
-    println!();
     println!("addressbook home set: {addressbook_home_set:?}");
 }

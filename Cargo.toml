@@ -2,13 +2,13 @@
 resolver = "2"
 members = [
   "addressbook-lib",
-  "addressbook-std",
-  "addressbook-std-rustls",
-  "addressbook-std-native-tls",
+  "addressbook-carddav",
+  "addressbook-carddav-rustls",
+  "addressbook-carddav-native-tls",
 ]
 
 [patch.crates-io]
 addressbook.path = "./addressbook-lib"
-addressbook-std.path = "./addressbook-std"
-addressbook-std-rustls.path = "./addressbook-std-rustls"
-addressbook-std-native-tls.path = "./addressbook-std-native-tls"
+addressbook-carddav.path = "./addressbook-carddav"
+addressbook-carddav-rustls.path = "./addressbook-carddav-rustls"
+addressbook-carddav-native-tls.path = "./addressbook-carddav-native-tls"

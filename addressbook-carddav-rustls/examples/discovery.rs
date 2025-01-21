@@ -1,7 +1,7 @@
 use std::io::stderr;
 
 use addressbook::{carddav::Client, tcp};
-use addressbook_std_rustls::Connector;
+use addressbook_carddav_rustls::{Connector, CryptoProvider};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 fn main() {
@@ -12,20 +12,34 @@ fn main() {
 
     let client = Client::new_from_envs();
 
+    let crypto =
+        std::env::var("CRYPTO").expect("CRYPTO env var should be either `aws-lc` or `ring`");
+    let crypto = match crypto.as_str() {
+        #[cfg(feature = "aws-lc")]
+        "aws-lc" => CryptoProvider::AwsLc,
+        #[cfg(not(feature = "aws-lc"))]
+        "aws-lc" => panic!("missing feature `aws-lc`"),
+        #[cfg(feature = "ring")]
+        "ring" => CryptoProvider::Ring,
+        #[cfg(not(feature = "ring"))]
+        "ring" => panic!("missing feature `ring`"),
+        unknown => panic!("unknown crypto provider {unknown} (valid: aws-lc, ring)"),
+    };
+
     // Current user principal
 
     // NOTE: ideally, this should be needed once in order to re-use
     // the connection. It depends on the HTTP protocol returned by the
     // server.
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    let mut tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.current_user_principal();
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
@@ -38,20 +52,19 @@ fn main() {
 
     // Addressbook home set
 
-    let mut tcp = Connector::connect(&client.config).unwrap();
+    tls = Connector::connect(&client.config.hostname, client.config.port, &crypto).unwrap();
     let mut flow = client.addressbook_home_set(current_user_principal);
     while let Some(io) = flow.next() {
         match io {
             tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
+                tls.read(&mut flow).unwrap();
             }
             tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
+                tls.write(&mut flow).unwrap();
             }
         }
     }
 
     let addressbook_home_set = flow.output().unwrap();
-    println!();
     println!("addressbook home set: {addressbook_home_set:?}");
 }

@@ -3,7 +3,7 @@ use std::{
     net::TcpStream,
 };
 
-use addressbook::{carddav::Config, tcp};
+use addressbook::tcp;
 
 #[derive(Debug)]
 pub struct Connector {
@@ -11,9 +11,8 @@ pub struct Connector {
 }
 
 impl Connector {
-    pub fn connect(config: &Config) -> Result<Self> {
-        let addr = (config.hostname.as_str(), config.port);
-        let stream = TcpStream::connect(addr)?;
+    pub fn connect(hostname: impl AsRef<str>, port: u16) -> Result<Self> {
+        let stream = TcpStream::connect((hostname.as_ref(), port))?;
         Ok(Self { stream })
     }
 

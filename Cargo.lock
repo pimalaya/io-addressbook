@@ -21,33 +21,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "addressbook-std"
+name = "addressbook-carddav"
 version = "0.1.0"
 dependencies = [
  "addressbook",
- "addressbook-std",
+ "addressbook-carddav",
  "tracing-subscriber",
 ]
 
 [[package]]
-name = "addressbook-std-native-tls"
+name = "addressbook-carddav-native-tls"
 version = "0.1.0"
 dependencies = [
  "addressbook",
- "addressbook-std-native-tls",
+ "addressbook-carddav-native-tls",
  "native-tls",
  "thiserror 2.0.11",
  "tracing-subscriber",
 ]
 
 [[package]]
-name = "addressbook-std-rustls"
+name = "addressbook-carddav-rustls"
 version = "0.1.0"
 dependencies = [
  "addressbook",
- "addressbook-std-rustls",
+ "addressbook-carddav-rustls",
  "rustls",
  "rustls-platform-verifier",
+ "thiserror 2.0.11",
  "tracing-subscriber",
 ]
 
@@ -719,6 +720,7 @@ dependencies = [
  "aws-lc-rs",
  "log",
  "once_cell",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",

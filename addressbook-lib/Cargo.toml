@@ -8,27 +8,27 @@ license = "MIT"
 categories = []
 keywords = ["lib", "contact", "addressbook", "carddav", "webdav"]
 homepage = "https://pimalaya.org/"
-documentation = "https://github.com/pimalaya/addressbook-lib/"
-repository = "https://github.com/pimalaya/addressbook-lib/"
+documentation = "https://docs.rs/addressbook/latest/addressbook/"
+repository = "https://github.com/pimalaya/addressbook/"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
+carddav = ["dep:base64", "dep:chrono", "dep:memchr", "dep:quick-xml", "dep:secrecy", "dep:thiserror", "dep:tracing", "dep:vparser"]
 
 [dev-dependencies]
-addressbook = { path = ".", features = [] }
+addressbook = { path = ".", features = ["carddav"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies]
-base64 = { version = "0.22", features = [] }
-chrono = { version = "0.4", features = [] }
-memchr = { version = "2.7.4", features = [] }
-quick-xml = { version = "0.37", features = ["serialize"] }
-secrecy = { version = "0.10", features = [] }
+base64 = { version = "0.22", optional = true }
+chrono = { version = "0.4", optional = true }
+memchr = { version = "2.7.4", optional = true }
+quick-xml = { version = "0.37", features = ["serialize"], optional = true }
+secrecy = { version = "0.10", optional = true }
 serde = { version = "1", features = ["derive"] }
-thiserror = { version = "2", features = [] }
-tracing = { version = "0.1", features = [] }
+thiserror = { version = "2", optional = true }
+tracing = { version = "0.1", optional = true }
 uuid = { version = "1", features = ["v4"] }
-vparser = { version = "1", features = [] }
+vparser = { version = "1", optional = true }

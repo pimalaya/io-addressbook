@@ -60,11 +60,11 @@ impl Client {
         }
 
         if let Ok(uri) = std::env::var("URI") {
-            println!("using custom addressbook home set URI {uri}");
+            println!("using custom home URI {uri}");
             config.home_uri = uri;
         } else {
             let uri = &config.home_uri;
-            println!("using default addressbook home set URI {uri}");
+            println!("using default home URI {uri}");
         }
 
         Self { config }
@@ -148,6 +148,7 @@ pub struct Config {
     ///
     /// Authentication can be done using password or OAuth 2.0.
     pub authentication: Authentication,
+    // pub encryption: Encryption,
 }
 
 impl Default for Config {
