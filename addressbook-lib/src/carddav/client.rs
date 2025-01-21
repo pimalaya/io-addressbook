@@ -1,6 +1,6 @@
 use secrecy::{ExposeSecret, SecretString};
 
-use crate::{Addressbook, Card};
+use crate::{Addressbook, Card, PartialAddressbook};
 
 use super::{
     AddressbookHomeSet, CreateAddressbook, CreateCard, CurrentUserPrincipal, DeleteAddressbook,
@@ -99,7 +99,7 @@ impl Client {
         ListAddressbooks::new(&self.config)
     }
 
-    pub fn update_addressbook(&self, addressbook: Addressbook) -> UpdateAddressbook {
+    pub fn update_addressbook(&self, addressbook: PartialAddressbook) -> UpdateAddressbook {
         UpdateAddressbook::new(&self.config, addressbook)
     }
 

@@ -1,6 +1,6 @@
 use std::io::stderr;
 
-use addressbook::{carddav::Client, tcp, Addressbook};
+use addressbook::{carddav::Client, tcp, Addressbook, PartialAddressbook};
 use addressbook_carddav_rustls::{Connector, CryptoProvider};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -43,11 +43,12 @@ fn main() {
         }
     }
 
-    let mut addressbook = flow.output().unwrap();
+    let addressbook = flow.output().unwrap();
     println!();
     println!("created addressbook: {addressbook:#?}");
 
-    addressbook.name = "Test updated".into();
+    let mut addressbook = PartialAddressbook::from(addressbook);
+    addressbook.name = None;
     addressbook.desc = Some("".into());
     addressbook.color = Some("#abcdef".into());
 

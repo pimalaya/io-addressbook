@@ -57,7 +57,14 @@ impl ListAddressbooks {
 
             let mut is_addressbook = None;
             let mut addressbook = Addressbook::default();
-            addressbook.id = response.href.value;
+            addressbook.id = response
+                .href
+                .value
+                .trim_end_matches('/')
+                .rsplit('/')
+                .next()
+                .unwrap() // SAFETY: addressbooks belong to principal
+                .to_owned();
 
             for propstat in propstats {
                 if let Some(false) = is_addressbook {

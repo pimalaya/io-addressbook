@@ -27,6 +27,36 @@ impl Default for Addressbook {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct PartialAddressbook {
+    pub id: String,
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub color: Option<String>,
+}
+
+impl PartialAddressbook {
+    pub fn new(id: impl ToString) -> Self {
+        Self {
+            id: id.to_string(),
+            name: None,
+            desc: None,
+            color: None,
+        }
+    }
+}
+
+impl From<Addressbook> for PartialAddressbook {
+    fn from(addressbook: Addressbook) -> Self {
+        Self {
+            id: addressbook.id,
+            name: Some(addressbook.name),
+            desc: addressbook.desc,
+            color: addressbook.color,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct Addressbooks(Vec<Addressbook>);
 

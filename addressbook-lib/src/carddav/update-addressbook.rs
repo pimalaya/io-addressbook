@@ -5,21 +5,26 @@ use crate::{
     carddav::response::MkcolResponse,
     http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
-    Addressbook,
+    PartialAddressbook,
 };
 
 use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct UpdateAddressbook {
-    addressbook: Addressbook,
+    addressbook: PartialAddressbook,
     http: SendHttpRequest,
 }
 
 impl UpdateAddressbook {
-    pub fn new(config: &Config, addressbook: Addressbook) -> Self {
+    pub fn new(config: &Config, addressbook: PartialAddressbook) -> Self {
         let base_uri = config.home_uri.trim_end_matches('/');
         let uri = &format!("{base_uri}/{}", addressbook.id);
+
+        let name = match &addressbook.name {
+            Some(name) => format!("<displayname>{name}</displayname>"),
+            None => String::new(),
+        };
 
         let color = match &addressbook.color {
             Some(color) => format!("<I:addressbook-color>{color}</I:addressbook-color>"),
@@ -39,7 +44,7 @@ impl UpdateAddressbook {
 
         request = request.body(&format!(
             include_str!("./update-addressbook.xml"),
-            &addressbook.name, color, desc,
+            name, color, desc,
         ));
 
         Self {
@@ -48,7 +53,7 @@ impl UpdateAddressbook {
         }
     }
 
-    pub fn output(mut self) -> Result<Addressbook, quick_xml::de::DeError> {
+    pub fn output(mut self) -> Result<PartialAddressbook, quick_xml::de::DeError> {
         let body = self.http.take_body();
 
         if body.is_empty() {
@@ -67,17 +72,9 @@ impl UpdateAddressbook {
                 continue;
             }
 
-            if let Some(name) = propstat.prop.displayname {
-                self.addressbook.name = name
-            }
-
-            if let Some(desc) = propstat.prop.addressbook_description {
-                self.addressbook.desc = Some(desc);
-            }
-
-            if let Some(color) = propstat.prop.addressbook_color {
-                self.addressbook.color = Some(color);
-            }
+            self.addressbook.name = propstat.prop.displayname;
+            self.addressbook.desc = propstat.prop.addressbook_description;
+            self.addressbook.color = propstat.prop.addressbook_color;
         }
 
         Ok(self.addressbook)
