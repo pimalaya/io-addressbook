@@ -33,15 +33,8 @@ fn main() {
     println!();
     println!("created addressbook: {addressbook:#?}");
 
-    let mut card = Card::default();
-    card.content = format!(
-        "BEGIN:VCARD
-VERSION:3.0
-UID:{}
-FN:Test
-END:VCARD",
-        card.id
-    );
+    let mut card = Card::new_v3_0();
+    card.properties.insert("FN".into(), "Test".into());
 
     tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.create_card(&addressbook.id, card);
@@ -77,14 +70,7 @@ END:VCARD",
     println!();
     println!("read card: {card:#?}");
 
-    card.content = format!(
-        "BEGIN:VCARD
-VERSION:3.0
-UID:{}
-FN:Test updated
-END:VCARD",
-        card.id
-    );
+    card.properties.insert("FN".into(), "Test updated".into());
 
     tcp = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.update_card(&addressbook.id, card);

@@ -1,50 +1,113 @@
-use quick_xml::DeError as Error;
+use serde::Deserialize;
+use tracing::{debug, trace};
 
 use crate::{
-    carddav::serde::{AddressDataProp, Multistatus},
-    http::sans_io::{Request, SendReceiveFlow},
-    tcp::sans_io::{Flow, Io, Read, Write},
+    http::{Request, SendHttpRequest},
+    tcp::{Flow, Io, Read, Write},
+    Card, Cards,
+};
+
+use super::{
+    client::Authentication,
+    response::{Multistatus, Value},
+    Config,
 };
 
 #[derive(Debug)]
-pub struct ListCardsFlow {
-    http: SendReceiveFlow,
+pub struct ListCards {
+    http: SendHttpRequest,
 }
 
-impl ListCardsFlow {
-    const BODY: &str = r#"
-        <C:addressbook-query xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-            <prop>
-                <C:address-data />
-            </prop>
-        </C:addressbook-query>
-    "#;
+impl ListCards {
+    const BODY: &'static str = include_str!("./list-cards.xml");
 
-    pub fn new(
-        uri: impl AsRef<str>,
-        version: impl AsRef<str>,
-        user: impl AsRef<str>,
-        pass: impl AsRef<str>,
-    ) -> Self {
-        let request = Request::report(uri.as_ref(), version.as_ref())
+    pub fn new(config: &Config, addressbook_id: impl AsRef<str>) -> Self {
+        let base_uri = config.home_uri.trim_end_matches('/');
+        let uri = &format!("{base_uri}/{}", addressbook_id.as_ref());
+        let mut request = Request::report(uri, config.http_version.as_ref())
             .content_type_xml()
-            .basic_auth(user.as_ref(), pass.as_ref())
-            .depth("1")
-            .body(Self::BODY);
+            .depth("1");
+
+        if let Authentication::Basic(user, pass) = &config.authentication {
+            request = request.basic_auth(user, pass);
+        };
 
         Self {
-            http: SendReceiveFlow::new(request),
+            http: SendHttpRequest::new(request.body(Self::BODY)),
         }
     }
 
-    pub fn output(self) -> Result<Multistatus<AddressDataProp>, Error> {
-        quick_xml::de::from_reader(self.http.take_body().as_slice())
+    pub fn output(self) -> Result<Cards, quick_xml::de::DeError> {
+        let body = self.http.take_body();
+        let response: Response = quick_xml::de::from_reader(body.as_slice())?;
+        let mut cards = Cards::default();
+
+        let Some(responses) = response.responses else {
+            return Ok(cards);
+        };
+
+        for response in responses {
+            trace!(?response, "process multistatus");
+
+            if let Some(status) = response.status {
+                if !status.is_success() {
+                    debug!(?status, "multistatus response error");
+                    continue;
+                }
+            };
+
+            let Some(propstats) = response.propstats else {
+                continue;
+            };
+
+            let mut parts = response.href.value.trim_end_matches('/').rsplit(['.', '/']);
+            // SAFETY: cards have .vcf extension
+            parts.next().unwrap();
+            // SAFETY: cards belong to addressbooks
+            let id = parts.next().unwrap();
+
+            let mut card = None;
+
+            for propstat in propstats {
+                if !propstat.status.is_success() {
+                    debug!(?propstat.status, "multistatus propstat error");
+                    continue;
+                }
+
+                let Some(content) = propstat.prop.address_data else {
+                    continue;
+                };
+
+                let Some(this_card) = Card::parse(id, content.value) else {
+                    continue;
+                };
+
+                card.replace(this_card);
+                break;
+            }
+
+            let Some(card) = card else {
+                continue;
+            };
+
+            cards.push(card);
+        }
+
+        Ok(cards)
     }
 }
 
-impl Flow for ListCardsFlow {}
+pub type Response = Multistatus<Prop>;
 
-impl Write for ListCardsFlow {
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Prop {
+    pub address_data: Option<Value>,
+}
+
+impl Flow for ListCards {}
+
+impl Write for ListCards {
     fn get_buffer(&mut self) -> &[u8] {
         self.http.get_buffer()
     }
@@ -54,7 +117,7 @@ impl Write for ListCardsFlow {
     }
 }
 
-impl Read for ListCardsFlow {
+impl Read for ListCards {
     fn get_buffer_mut(&mut self) -> &mut [u8] {
         self.http.get_buffer_mut()
     }
@@ -64,7 +127,7 @@ impl Read for ListCardsFlow {
     }
 }
 
-impl Iterator for ListCardsFlow {
+impl Iterator for ListCards {
     type Item = Io;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -1,5 +1,7 @@
 use std::string::FromUtf8Error;
 
+use thiserror::Error;
+
 use crate::{
     http::{Request, SendHttpRequest},
     tcp::{Flow, Io, Read, Write},
@@ -8,6 +10,14 @@ use crate::{
 
 use super::{client::Authentication, Config};
 
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    DecodeUtf8Error(#[from] FromUtf8Error),
+    #[error("cannot parse vCard")]
+    ParseError,
+}
+
 #[derive(Debug)]
 pub struct ReadCard {
     id: String,
@@ -15,12 +25,13 @@ pub struct ReadCard {
 }
 
 impl ReadCard {
-    const BODY: &str = "";
+    const BODY: &'static str = "";
 
     pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> Self {
+        let addressbook_id = addressbook_id.as_ref();
         let card_id = card_id.to_string();
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{}/{card_id}.vcf", addressbook_id.as_ref());
+        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.vcf");
 
         let mut request = Request::get(uri.as_ref(), config.http_version.as_ref());
 
@@ -34,11 +45,9 @@ impl ReadCard {
         }
     }
 
-    pub fn output(self) -> Result<Card, FromUtf8Error> {
-        Ok(Card {
-            id: self.id,
-            content: String::from_utf8(self.http.take_body())?,
-        })
+    pub fn output(self) -> Result<Card, Error> {
+        let content = String::from_utf8(self.http.take_body())?;
+        Card::parse(self.id, content).ok_or(Error::ParseError)
     }
 }
 

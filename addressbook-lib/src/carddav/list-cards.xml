@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<C:addressbook-query xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+  <prop>
+    <C:address-data />
+  </prop>
+</C:addressbook-query>

@@ -15,6 +15,8 @@ pub mod delete_addressbook;
 pub mod delete_card;
 #[path = "list-addressbooks.rs"]
 pub mod list_addressbooks;
+#[path = "list-cards.rs"]
+pub mod list_cards;
 #[path = "read-card.rs"]
 pub mod read_card;
 #[path = "update-addressbook.rs"]
@@ -32,6 +34,7 @@ pub use self::{
     delete_addressbook::DeleteAddressbook,
     delete_card::DeleteCard,
     list_addressbooks::ListAddressbooks,
+    list_cards::ListCards,
     read_card::ReadCard,
     update_addressbook::UpdateAddressbook,
     update_card::UpdateCard,

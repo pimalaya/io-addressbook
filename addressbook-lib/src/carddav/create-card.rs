@@ -14,15 +14,16 @@ pub struct CreateCard {
 
 impl CreateCard {
     pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card: Card) -> Self {
+        let addressbook_id = addressbook_id.as_ref();
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{}/{}.vcf", addressbook_id.as_ref(), card.id);
+        let uri = &format!("{base_uri}/{addressbook_id}/{}.vcf", card.id);
         let mut request = Request::put(uri, config.http_version.as_ref()).content_type_vcard();
 
         if let Authentication::Basic(user, pass) = &config.authentication {
             request = request.basic_auth(user, pass);
         };
 
-        request = request.body(card.content.as_str());
+        request = request.body(&card.to_string());
 
         Self {
             card,
