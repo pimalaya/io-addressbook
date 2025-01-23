@@ -1,5 +1,5 @@
 use std::{
-    fs::{read, read_dir},
+    fs::{create_dir, read, read_dir, write},
     io::{Error, ErrorKind, Result},
 };
 
@@ -19,9 +19,43 @@ impl Connector {
         let state = flow.as_mut();
 
         match io {
+            fs::Io::CreateDir => self.create_dir(state),
+            fs::Io::CreateFiles => self.create_files(state),
             fs::Io::ReadDir => self.read_dir(state),
             fs::Io::ReadFiles => self.read_files(state),
         }
+    }
+
+    #[instrument(skip_all)]
+    fn create_dir(&self, state: &mut fs::State) -> Result<()> {
+        let Some(path) = state.get_create_dir_path() else {
+            let err = Error::new(ErrorKind::NotFound, "create dir state not found");
+            return Err(err);
+        };
+
+        create_dir(path)?;
+
+        state.set_create_dir_done();
+        Ok(())
+    }
+
+    #[instrument(skip_all)]
+    fn create_files(&self, state: &mut fs::State) -> Result<()> {
+        let Some(contents) = state.get_create_file_contents() else {
+            let err = Error::new(ErrorKind::NotFound, "create files state not found");
+            return Err(err);
+        };
+
+        let mut created_paths = Vec::new();
+
+        for (path, content) in contents {
+            trace!(?path, "create file");
+            write(path, content)?;
+            created_paths.push(path.to_owned());
+        }
+
+        state.set_create_files_done(created_paths);
+        Ok(())
     }
 
     #[instrument(skip_all)]
@@ -58,7 +92,7 @@ impl Connector {
             return Err(err);
         };
 
-        let mut contents = vec![];
+        let mut contents = Vec::new();
 
         for path in paths {
             trace!(?path, "read file");

@@ -2,4 +2,7 @@ mod io;
 mod state;
 
 #[doc(inline)]
-pub use self::{io::Io, state::State};
+pub use self::{
+    io::Io,
+    state::{CreateFileState, State},
+};
