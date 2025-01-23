@@ -1,30 +1,42 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use tracing::{debug, instrument, trace};
+
 use crate::{Addressbook, Addressbooks};
 
 use super::{fs, Config};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
+pub enum Step {
+    #[default]
+    ReadDir,
+    ReadFiles,
+    ReadMoreFiles,
+    Done(Addressbooks),
+}
+
+#[derive(Debug, Default)]
 pub struct ListAddressbooks {
     state: fs::State,
+    step: Step,
     valid_addressbook_dirs: Vec<PathBuf>,
-    addressbooks: Option<Addressbooks>,
 }
 
 impl ListAddressbooks {
     pub fn new(config: &Config) -> Self {
-        let mut state = fs::State::default();
-        state.read_dir = Some((config.home_dir.clone(), None));
-
-        Self {
-            state,
-            valid_addressbook_dirs: Default::default(),
-            addressbooks: Default::default(),
-        }
+        let mut this = Self::default();
+        this.state.read_dir = Some((config.home_dir.clone(), None));
+        this
     }
 
-    pub fn output(mut self) -> Option<Addressbooks> {
-        self.addressbooks.take()
+    #[instrument(skip_all)]
+    pub fn output(self) -> Option<Addressbooks> {
+        let Step::Done(addressbooks) = self.step else {
+            debug!(?self.step, "invalid step to get output");
+            return None;
+        };
+
+        Some(addressbooks)
     }
 }
 
@@ -37,20 +49,22 @@ impl AsMut<fs::State> for ListAddressbooks {
 impl Iterator for ListAddressbooks {
     type Item = fs::Io;
 
+    #[instrument(skip_all)]
     fn next(&mut self) -> Option<Self::Item> {
-        println!("state: {self:?}");
+        trace!(step = ?self.step, state = ?self.state);
 
-        match &mut self.state {
-            fs::State {
-                read_dir: Some((_, None)),
-                read_files: None,
-            } => {
-                return Some(fs::Io::ReadDir);
+        match self.step {
+            Step::Done(_) => None,
+            Step::ReadDir => {
+                self.step = Step::ReadFiles;
+                Some(fs::Io::ReadDir)
             }
-            fs::State {
-                read_dir: Some((dir, Some(paths))),
-                read_files: None,
-            } => {
+            Step::ReadFiles => {
+                let Some((dir, Some(paths))) = &self.state.read_dir else {
+                    debug!("invalid state for step {:?}", self.step);
+                    return None;
+                };
+
                 let mut files = HashMap::default();
 
                 for path in paths {
@@ -83,18 +97,19 @@ impl Iterator for ListAddressbooks {
                 }
 
                 self.state.read_files = Some(files);
-                Some(fs::Io::ReadDir)
+                self.step = Step::ReadMoreFiles;
+                Some(fs::Io::ReadFiles)
             }
-            fs::State {
-                read_dir: Some(_),
-                read_files: Some(files),
-            } if files.values().any(Option::is_none) => {
-                return Some(fs::Io::ReadFiles);
-            }
-            fs::State {
-                read_dir: Some(_),
-                read_files: Some(files),
-            } => {
+            Step::ReadMoreFiles => {
+                let Some(files) = &mut self.state.read_files else {
+                    debug!("invalid state for step {:?}", self.step);
+                    return None;
+                };
+
+                if files.values().any(Option::is_none) {
+                    return Some(fs::Io::ReadFiles);
+                }
+
                 let mut addressbooks = Addressbooks::default();
 
                 for path in self.valid_addressbook_dirs.drain(..) {
@@ -124,10 +139,9 @@ impl Iterator for ListAddressbooks {
                     addressbooks.push(addressbook);
                 }
 
-                self.addressbooks.replace(addressbooks);
+                self.step = Step::Done(addressbooks);
                 None
             }
-            _ => None,
         }
     }
 }

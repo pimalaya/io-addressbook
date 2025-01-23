@@ -4,7 +4,7 @@ use std::{
 };
 
 use addressbook::vdir::fs;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 #[derive(Debug, Default)]
 pub struct Connector;
@@ -14,6 +14,7 @@ impl Connector {
         Self::default()
     }
 
+    #[instrument(skip_all)]
     pub fn execute<F: AsMut<fs::State>>(&mut self, flow: &mut F, io: fs::Io) -> Result<()> {
         let state = flow.as_mut();
 
@@ -23,6 +24,7 @@ impl Connector {
         }
     }
 
+    #[instrument(skip_all)]
     fn read_dir(&self, state: &mut fs::State) -> Result<()> {
         let Some(dir) = state.get_read_dir_path() else {
             let err = Error::new(ErrorKind::NotFound, "read dir state not found");
@@ -32,7 +34,7 @@ impl Connector {
         let mut paths = Vec::new();
 
         for entry in read_dir(dir)? {
-            trace!(?entry, "process directory entry");
+            trace!(?entry, "read directory");
 
             let entry = match entry {
                 Ok(entry) => entry,
@@ -49,6 +51,7 @@ impl Connector {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     fn read_files(&self, state: &mut fs::State) -> Result<()> {
         let Some(paths) = state.get_read_file_paths() else {
             let err = Error::new(ErrorKind::NotFound, "read file state not found");
@@ -58,6 +61,7 @@ impl Connector {
         let mut contents = vec![];
 
         for path in paths {
+            trace!(?path, "read file");
             let content = read(path)?;
             contents.push((path.to_owned(), content));
         }
