@@ -18,7 +18,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 vendored = ["native-tls/vendored"]
 
 [dev-dependencies]
-addressbook-carddav-native-tls = { path = ".", features = [] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies]

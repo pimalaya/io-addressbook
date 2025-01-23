@@ -6,7 +6,6 @@ version = 3
 name = "addressbook"
 version = "0.1.0"
 dependencies = [
- "addressbook",
  "base64",
  "chrono",
  "memchr",
@@ -25,7 +24,6 @@ name = "addressbook-carddav"
 version = "0.1.0"
 dependencies = [
  "addressbook",
- "addressbook-carddav",
  "tracing-subscriber",
 ]
 
@@ -34,7 +32,6 @@ name = "addressbook-carddav-native-tls"
 version = "0.1.0"
 dependencies = [
  "addressbook",
- "addressbook-carddav-native-tls",
  "native-tls",
  "thiserror 2.0.11",
  "tracing-subscriber",
@@ -45,10 +42,18 @@ name = "addressbook-carddav-rustls"
 version = "0.1.0"
 dependencies = [
  "addressbook",
- "addressbook-carddav-rustls",
  "rustls",
  "rustls-platform-verifier",
  "thiserror 2.0.11",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "addressbook-vdir"
+version = "0.1.0"
+dependencies = [
+ "addressbook",
+ "tracing",
  "tracing-subscriber",
 ]
 

@@ -19,7 +19,6 @@ aws-lc = ["rustls/aws_lc_rs"]
 ring = ["rustls/ring"]
 
 [dev-dependencies]
-addressbook-carddav-rustls = { path = ".", features = ["aws-lc", "ring"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies]

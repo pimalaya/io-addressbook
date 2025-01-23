@@ -15,10 +15,11 @@ repository = "https://github.com/pimalaya/addressbook/"
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-carddav = ["dep:base64", "dep:chrono", "dep:memchr", "dep:quick-xml", "dep:secrecy", "dep:thiserror", "dep:tracing", "dep:vparser"]
+default = ["carddav", "vdir"]
+carddav = ["dep:base64", "dep:chrono", "dep:memchr", "dep:quick-xml", "dep:secrecy", "dep:thiserror"]
+vdir = []
 
 [dev-dependencies]
-addressbook = { path = ".", features = ["carddav"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies]
@@ -29,6 +30,6 @@ quick-xml = { version = "0.37", features = ["serialize"], optional = true }
 secrecy = { version = "0.10", optional = true }
 serde = { version = "1", features = ["derive"] }
 thiserror = { version = "2", optional = true }
-tracing = { version = "0.1", optional = true }
+tracing = "0.1"
 uuid = { version = "1", features = ["v4"] }
-vparser = { version = "1", optional = true }
+vparser = "1"

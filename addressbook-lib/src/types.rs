@@ -136,7 +136,7 @@ impl Card {
                     "3.0" => version = Some(CardVersion::V3_0),
                     "4.0" => version = Some(CardVersion::V4_0),
                     v => {
-                        debug!("unknown vCard version {v}");
+                        debug!("unknown vCard version {v:?}");
                         version = None;
                     }
                 },
