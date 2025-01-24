@@ -58,6 +58,15 @@ fn main() {
     println!();
     println!("updated card: {card:#?}");
 
+    let mut flow = client.list_cards(&addressbook.id);
+    while let Some(io) = flow.next() {
+        vdir.execute(&mut flow, io).unwrap();
+    }
+
+    let cards = flow.output().unwrap();
+    println!();
+    println!("list cards: {cards:#?}");
+
     let mut flow = client.delete_card(&addressbook.id, &card.id);
     while let Some(io) = flow.next() {
         vdir.execute(&mut flow, io).unwrap();

@@ -4,7 +4,7 @@ use crate::{Addressbook, Card, PartialAddressbook};
 
 use super::{
     Config, CreateAddressbook, CreateCard, DeleteAddressbook, DeleteCard, ListAddressbooks,
-    ReadCard, UpdateAddressbook, UpdateCard,
+    ListCards, ReadCard, UpdateAddressbook, UpdateCard,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,9 +60,9 @@ impl Client {
         ReadCard::new(&self.config, addressbook_id, card_id)
     }
 
-    // pub fn list_cards(&self, addressbook_id: impl AsRef<str>) -> ListCards {
-    //     ListCards::new(&self.config, addressbook_id)
-    // }
+    pub fn list_cards(&self, addressbook_id: impl AsRef<str>) -> ListCards {
+        ListCards::new(&self.config, addressbook_id)
+    }
 
     pub fn update_card(&self, addressbook_id: impl AsRef<str>, card: Card) -> UpdateCard {
         UpdateCard::new(&self.config, addressbook_id, card)
