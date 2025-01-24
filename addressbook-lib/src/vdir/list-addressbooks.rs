@@ -1,38 +1,44 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{mem, path::PathBuf};
 
 use tracing::{debug, instrument, trace};
 
-use crate::{Addressbook, Addressbooks};
+use crate::{
+    vdir::{fs::state::Task, COLOR, DESCRIPTION, DISPLAYNAME},
+    Addressbook, Addressbooks,
+};
 
 use super::{fs, Config};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub enum Step {
-    #[default]
     ReadDir,
     ReadFiles,
-    ReadMoreFiles,
+    ReadFilesDone,
     Done(Addressbooks),
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ListAddressbooks {
     state: fs::State,
-    step: Step,
+    next_step: Step,
+    home_dir: PathBuf,
     valid_addressbook_dirs: Vec<PathBuf>,
 }
 
 impl ListAddressbooks {
     pub fn new(config: &Config) -> Self {
-        let mut this = Self::default();
-        this.state.read_dir = Some((config.home_dir.clone(), None));
-        this
+        Self {
+            state: fs::State::default(),
+            next_step: Step::ReadDir,
+            home_dir: config.home_dir.clone(),
+            valid_addressbook_dirs: Vec::new(),
+        }
     }
 
     #[instrument(skip_all)]
     pub fn output(self) -> Option<Addressbooks> {
-        let Step::Done(addressbooks) = self.step else {
-            debug!(?self.step, "invalid step to get output");
+        let Step::Done(addressbooks) = self.next_step else {
+            debug!(?self.next_step, "invalid step to get output");
             return None;
         };
 
@@ -51,64 +57,66 @@ impl Iterator for ListAddressbooks {
 
     #[instrument(skip_all)]
     fn next(&mut self) -> Option<Self::Item> {
-        trace!(step = ?self.step, state = ?self.state);
+        trace!(step = ?self.next_step, state = ?self.state);
 
-        match self.step {
-            Step::Done(_) => None,
+        match self.next_step {
             Step::ReadDir => {
-                self.step = Step::ReadFiles;
+                self.state.read_dir = Task::Pending(self.home_dir.clone());
+                self.next_step = Step::ReadFiles;
                 Some(fs::Io::ReadDir)
             }
             Step::ReadFiles => {
-                let Some((dir, Some(paths))) = &self.state.read_dir else {
-                    debug!("invalid state for step {:?}", self.step);
+                let Task::Done(paths) = &mut self.state.read_dir else {
+                    debug!("invalid state for step {:?}", self.next_step);
                     return None;
                 };
 
-                let mut files = HashMap::default();
-
-                for path in paths {
+                paths.retain(|path| {
                     let Some(name) = path.file_name() else {
-                        continue;
+                        return false;
                     };
 
-                    let path = dir.join(&name);
+                    let path = self.home_dir.join(&name);
 
                     if !path.is_dir() {
-                        continue;
+                        return false;
                     }
 
-                    let name_path = path.join("displayname");
+                    true
+                });
+
+                mem::swap(&mut self.valid_addressbook_dirs, paths);
+                let mut paths = Vec::new();
+
+                for dir in &self.valid_addressbook_dirs {
+                    let name_path = dir.join(DISPLAYNAME);
+
                     if name_path.is_file() {
-                        files.insert(name_path, None);
+                        paths.push(name_path);
                     }
 
-                    let desc_path = path.join("description");
+                    let desc_path = dir.join(DESCRIPTION);
+
                     if desc_path.is_file() {
-                        files.insert(desc_path, None);
+                        paths.push(desc_path);
                     }
 
-                    let color_path = path.join("color");
+                    let color_path = dir.join(COLOR);
+
                     if color_path.is_file() {
-                        files.insert(color_path, None);
+                        paths.push(color_path);
                     }
-
-                    self.valid_addressbook_dirs.push(path);
                 }
 
-                self.state.read_files = Some(files);
-                self.step = Step::ReadMoreFiles;
+                self.state.read_files = Task::Pending(paths);
+                self.next_step = Step::ReadFilesDone;
                 Some(fs::Io::ReadFiles)
             }
-            Step::ReadMoreFiles => {
-                let Some(files) = &mut self.state.read_files else {
-                    debug!("invalid state for step {:?}", self.step);
+            Step::ReadFilesDone => {
+                let Task::Done(contents) = &mut self.state.read_files else {
+                    debug!("invalid state for step {:?}", self.next_step);
                     return None;
                 };
-
-                if files.values().any(Option::is_none) {
-                    return Some(fs::Io::ReadFiles);
-                }
 
                 let mut addressbooks = Addressbooks::default();
 
@@ -122,26 +130,38 @@ impl Iterator for ListAddressbooks {
                         color: None,
                     };
 
-                    if let Some(name) = files.remove(&path.join("displayname")).flatten() {
-                        addressbook.name = String::from_utf8_lossy(&name).trim().to_string();
+                    if let Some(name) = contents.remove(&path.join(DISPLAYNAME)) {
+                        let name = String::from_utf8_lossy(&name);
+                        addressbook.name = name.to_string();
                     }
 
-                    if let Some(desc) = files.remove(&path.join("description")).flatten() {
-                        let desc = String::from_utf8_lossy(&desc).trim().to_string();
-                        addressbook.desc.replace(desc);
+                    if let Some(desc) = contents.remove(&path.join(DESCRIPTION)) {
+                        let desc = String::from_utf8_lossy(&desc);
+
+                        if desc.trim().is_empty() {
+                            addressbook.desc = None
+                        } else {
+                            addressbook.desc.replace(desc.to_string());
+                        }
                     }
 
-                    if let Some(color) = files.remove(&path.join("color")).flatten() {
-                        let color = String::from_utf8_lossy(&color).trim().to_string();
-                        addressbook.color.replace(color);
+                    if let Some(color) = contents.remove(&path.join(COLOR)) {
+                        let color = String::from_utf8_lossy(&color);
+
+                        if color.trim().is_empty() {
+                            addressbook.color = None
+                        } else {
+                            addressbook.color.replace(color.to_string());
+                        }
                     }
 
                     addressbooks.push(addressbook);
                 }
 
-                self.step = Step::Done(addressbooks);
+                self.next_step = Step::Done(addressbooks);
                 None
             }
+            Step::Done(_) => None,
         }
     }
 }

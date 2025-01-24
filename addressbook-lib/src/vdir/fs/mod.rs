@@ -1,8 +1,5 @@
 mod io;
-mod state;
+pub(crate) mod state;
 
 #[doc(inline)]
-pub use self::{
-    io::Io,
-    state::{CreateFileState, State},
-};
+pub use self::{io::Io, state::State};

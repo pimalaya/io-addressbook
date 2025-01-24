@@ -1,6 +1,6 @@
 use std::io::stderr;
 
-use addressbook::{vdir::Client, Addressbook};
+use addressbook::{vdir::Client, Addressbook, PartialAddressbook};
 use addressbook_vdir::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -35,42 +35,44 @@ fn main() {
     println!();
     println!("addressbooks: {addressbooks:#?}");
 
-    // let mut addressbook = PartialAddressbook::from(addressbook);
-    // addressbook.name = None;
-    // addressbook.desc = Some("".into());
-    // addressbook.color = Some("#abcdef".into());
+    let mut addressbook = PartialAddressbook::from(addressbook);
+    addressbook.name = None;
+    addressbook.desc = Some("".into());
+    addressbook.color = Some("#abcdef".into());
 
-    // fs = Connector::connect(&client.config.hostname, client.config.port).unwrap();
-    // let mut flow = client.update_addressbook(addressbook);
-    // while let Some(io) = flow.next() {
-    //     match io {
-    //         tcp::Io::Read => {
-    //             fs.read(&mut flow).unwrap();
-    //         }
-    //         tcp::Io::Write => {
-    //             fs.write(&mut flow).unwrap();
-    //         }
-    //     }
-    // }
+    let mut flow = client.update_addressbook(addressbook);
+    while let Some(io) = flow.next() {
+        fs.execute(&mut flow, io).unwrap();
+    }
 
-    // let addressbook = flow.output().unwrap();
-    // println!();
-    // println!("updated addressbook: {addressbook:#?}");
+    let addressbook = flow.output().unwrap();
+    println!();
+    println!("updated addressbook: {addressbook:#?}");
 
-    // fs = Connector::connect(&client.config.hostname, client.config.port).unwrap();
-    // let mut flow = client.delete_addressbook(&addressbook.id);
-    // while let Some(io) = flow.next() {
-    //     match io {
-    //         tcp::Io::Read => {
-    //             fs.read(&mut flow).unwrap();
-    //         }
-    //         tcp::Io::Write => {
-    //             fs.write(&mut flow).unwrap();
-    //         }
-    //     }
-    // }
+    let mut flow = client.list_addressbooks();
+    while let Some(io) = flow.next() {
+        fs.execute(&mut flow, io).unwrap();
+    }
 
-    // let success = flow.output().unwrap();
-    // println!();
-    // println!("addressbook {} deleted: {success}", addressbook.id);
+    let addressbooks = flow.output().unwrap();
+    println!();
+    println!("addressbooks: {addressbooks:#?}");
+
+    let mut flow = client.delete_addressbook(&addressbook.id);
+    while let Some(io) = flow.next() {
+        fs.execute(&mut flow, io).unwrap();
+    }
+
+    flow.output().unwrap();
+    println!();
+    println!("addressbook {} deleted", addressbook.id);
+
+    let mut flow = client.list_addressbooks();
+    while let Some(io) = flow.next() {
+        fs.execute(&mut flow, io).unwrap();
+    }
+
+    let addressbooks = flow.output().unwrap();
+    println!();
+    println!("addressbooks: {addressbooks:#?}");
 }

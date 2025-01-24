@@ -1,44 +1,45 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use tracing::{debug, instrument, trace};
 
-use crate::{vdir::fs::CreateFileState, Addressbook};
+use crate::{
+    vdir::{fs::state::Task, COLOR, DESCRIPTION, DISPLAYNAME},
+    Addressbook,
+};
 
 use super::{fs, Config};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub enum Step {
-    #[default]
     CreateDir,
     CreateFiles,
-    CreateMoreFiles,
     Done,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CreateAddressbook {
     state: fs::State,
-    step: Step,
+    next_step: Step,
+    addressbook_path: PathBuf,
     addressbook: Addressbook,
 }
 
 impl CreateAddressbook {
     pub fn new(config: &Config, addressbook: Addressbook) -> Self {
-        let mut state = fs::State::default();
         let addressbook_path = config.home_dir.join(&addressbook.id);
-        state.create_dir = Some((addressbook_path, false));
 
         Self {
-            state,
-            step: Step::default(),
+            state: fs::State::default(),
+            next_step: Step::CreateDir,
+            addressbook_path,
             addressbook,
         }
     }
 
     #[instrument(skip_all)]
     pub fn output(self) -> Option<Addressbook> {
-        let Step::Done = self.step else {
-            debug!(step = ?self.step, "invalid step to get output");
+        let Step::Done = self.next_step else {
+            debug!(step = ?self.next_step, "invalid step to get output");
             return None;
         };
 
@@ -57,52 +58,43 @@ impl Iterator for CreateAddressbook {
 
     #[instrument(skip_all)]
     fn next(&mut self) -> Option<Self::Item> {
-        trace!(step = ?self.step, state = ?self.state);
+        trace!(step = ?self.next_step, state = ?self.state);
 
-        match self.step {
-            Step::Done => None,
+        match self.next_step {
             Step::CreateDir => {
-                self.step = Step::CreateFiles;
+                self.state.create_dir = Task::Pending(self.addressbook_path.clone());
+                self.next_step = Step::CreateFiles;
                 Some(fs::Io::CreateDir)
             }
             Step::CreateFiles => {
-                let Some((path, true)) = &self.state.create_dir else {
-                    debug!("invalid state for step {:?}", self.step);
+                if !self.state.create_dir.is_done() {
+                    debug!("invalid state for step {:?}", self.next_step);
                     return None;
                 };
 
-                let mut files = HashMap::default();
+                let mut contents = HashMap::new();
 
-                let name = self.addressbook.name.as_bytes().to_vec();
-                files.insert(path.join("displayname"), CreateFileState::Write(name));
+                let path = self.addressbook_path.join(DISPLAYNAME);
+                let content = self.addressbook.name.as_bytes().to_vec();
+                contents.insert(path, content);
 
                 if let Some(desc) = self.addressbook.desc.as_ref() {
-                    let desc = CreateFileState::Write(desc.as_bytes().to_vec());
-                    files.insert(path.join("description"), desc);
+                    let path = self.addressbook_path.join(DESCRIPTION);
+                    let content = desc.as_bytes().to_vec();
+                    contents.insert(path, content);
                 }
 
                 if let Some(color) = self.addressbook.color.as_ref() {
-                    let color = CreateFileState::Write(color.as_bytes().to_vec());
-                    files.insert(path.join("color"), color);
+                    let path = self.addressbook_path.join(COLOR);
+                    let content = color.as_bytes().to_vec();
+                    contents.insert(path, content);
                 }
 
-                self.state.create_files = Some(files);
-                self.step = Step::CreateMoreFiles;
+                self.state.create_files = Task::Pending(contents);
+                self.next_step = Step::Done;
                 Some(fs::Io::CreateFiles)
             }
-            Step::CreateMoreFiles => {
-                let Some(files) = &mut self.state.create_files else {
-                    debug!("invalid state for step {:?}", self.step);
-                    return None;
-                };
-
-                if files.values().any(CreateFileState::needs_write) {
-                    return Some(fs::Io::CreateFiles);
-                }
-
-                self.step = Step::Done;
-                None
-            }
+            Step::Done => None,
         }
     }
 }
