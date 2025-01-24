@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use crate::{Addressbook, Card, PartialAddressbook};
 
 use super::{
-    Config, CreateAddressbook, CreateCard, DeleteAddressbook, ListAddressbooks, ReadCard,
-    UpdateAddressbook,
+    Config, CreateAddressbook, CreateCard, DeleteAddressbook, DeleteCard, ListAddressbooks,
+    ReadCard, UpdateAddressbook, UpdateCard,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -64,15 +64,15 @@ impl Client {
     //     ListCards::new(&self.config, addressbook_id)
     // }
 
-    // pub fn update_card(&self, addressbook_id: impl AsRef<str>, card: Card) -> UpdateCard {
-    //     UpdateCard::new(&self.config, addressbook_id, card)
-    // }
+    pub fn update_card(&self, addressbook_id: impl AsRef<str>, card: Card) -> UpdateCard {
+        UpdateCard::new(&self.config, addressbook_id, card)
+    }
 
-    // pub fn delete_card(
-    //     &self,
-    //     addressbook_id: impl AsRef<str>,
-    //     card_id: impl AsRef<str>,
-    // ) -> DeleteCard {
-    //     DeleteCard::new(&self.config, addressbook_id, card_id)
-    // }
+    pub fn delete_card(
+        &self,
+        addressbook_id: impl AsRef<str>,
+        card_id: impl AsRef<str>,
+    ) -> DeleteCard {
+        DeleteCard::new(&self.config, addressbook_id, card_id)
+    }
 }
