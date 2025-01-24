@@ -1,3 +1,6 @@
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+// #![doc = include_str!("../../README.md")]
+
 use std::{
     fs::{create_dir, read, read_dir, remove_dir_all, remove_file, rename, write},
     io::{Error, ErrorKind, Result},
