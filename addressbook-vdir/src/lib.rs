@@ -15,7 +15,7 @@ impl Connector {
     }
 
     #[instrument(skip_all)]
-    pub fn execute<F: AsMut<fs::State>>(&mut self, flow: &mut F, io: fs::Io) -> Result<()> {
+    pub fn execute<F: AsMut<fs::State>>(&self, flow: &mut F, io: fs::Io) -> Result<()> {
         let state = flow.as_mut();
 
         match io {
