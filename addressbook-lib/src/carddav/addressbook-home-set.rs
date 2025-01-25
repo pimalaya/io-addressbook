@@ -3,7 +3,7 @@ use tracing::{debug, trace};
 
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
 };
 
 use super::{
@@ -77,8 +77,6 @@ pub type Response = Multistatus<Prop>;
 pub struct Prop {
     pub addressbook_home_set: HrefProp,
 }
-
-impl Flow for AddressbookHomeSet {}
 
 impl Write for AddressbookHomeSet {
     fn get_buffer(&mut self) -> &[u8] {

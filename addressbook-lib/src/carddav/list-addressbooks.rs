@@ -4,7 +4,7 @@ use tracing::{debug, trace};
 use crate::{
     carddav::response::Multistatus,
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
     Addressbook, Addressbooks,
 };
 
@@ -119,8 +119,6 @@ pub struct Prop {
 pub struct ResourceType {
     pub addressbook: Option<()>,
 }
-
-impl Flow for ListAddressbooks {}
 
 impl Write for ListAddressbooks {
     fn get_buffer(&mut self) -> &[u8] {

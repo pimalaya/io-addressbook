@@ -3,7 +3,7 @@ use tracing::{debug, trace};
 
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
     Card, Cards,
 };
 
@@ -104,8 +104,6 @@ pub type Response = Multistatus<Prop>;
 pub struct Prop {
     pub address_data: Option<Value>,
 }
-
-impl Flow for ListCards {}
 
 impl Write for ListCards {
     fn get_buffer(&mut self) -> &[u8] {

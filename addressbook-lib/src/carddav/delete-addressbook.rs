@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
 };
 
 use super::{client::Authentication, response::StatusResponse, Config};
@@ -42,8 +42,6 @@ impl DeleteAddressbook {
 pub struct Response {
     pub response: StatusResponse,
 }
-
-impl Flow for DeleteAddressbook {}
 
 impl Write for DeleteAddressbook {
     fn get_buffer(&mut self) -> &[u8] {

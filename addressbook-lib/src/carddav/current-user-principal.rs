@@ -3,7 +3,7 @@ use tracing::{debug, trace};
 
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
 };
 
 use super::{
@@ -76,8 +76,6 @@ pub type Response = Multistatus<Prop>;
 pub struct Prop {
     pub current_user_principal: HrefProp,
 }
-
-impl Flow for CurrentUserPrincipal {}
 
 impl Write for CurrentUserPrincipal {
     fn get_buffer(&mut self) -> &[u8] {

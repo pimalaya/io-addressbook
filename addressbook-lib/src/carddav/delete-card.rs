@@ -1,6 +1,6 @@
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
 };
 
 use super::{client::Authentication, Config};
@@ -31,8 +31,6 @@ impl DeleteCard {
         }
     }
 }
-
-impl Flow for DeleteCard {}
 
 impl Write for DeleteCard {
     fn get_buffer(&mut self) -> &[u8] {

@@ -1,6 +1,6 @@
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
     Card,
 };
 
@@ -35,8 +35,6 @@ impl CreateCard {
         self.card
     }
 }
-
-impl Flow for CreateCard {}
 
 impl Write for CreateCard {
     fn get_buffer(&mut self) -> &[u8] {

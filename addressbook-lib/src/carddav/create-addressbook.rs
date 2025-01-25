@@ -4,7 +4,7 @@ use tracing::debug;
 use crate::{
     carddav::response::MkcolResponse,
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
     Addressbook,
 };
 
@@ -93,8 +93,6 @@ pub struct Prop {
     pub addressbook_color: Option<String>,
     pub addressbook_description: Option<String>,
 }
-
-impl Flow for CreateAddressbook {}
 
 impl Write for CreateAddressbook {
     fn get_buffer(&mut self) -> &[u8] {

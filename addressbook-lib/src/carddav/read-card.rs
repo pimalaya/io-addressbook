@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
     Card,
 };
 
@@ -50,8 +50,6 @@ impl ReadCard {
         Card::parse(self.id, content).ok_or(Error::ParseError)
     }
 }
-
-impl Flow for ReadCard {}
 
 impl Write for ReadCard {
     fn get_buffer(&mut self) -> &[u8] {

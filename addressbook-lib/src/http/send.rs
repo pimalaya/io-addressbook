@@ -5,7 +5,7 @@ use tracing::trace;
 
 use crate::{
     http::CRLF,
-    tcp::{Flow, Io, Read, Write},
+    tcp::{Io, Read, Write},
 };
 
 use super::{Request, State, CR, LF};
@@ -75,8 +75,6 @@ impl SendHttpRequest {
             .collect()
     }
 }
-
-impl Flow for SendHttpRequest {}
 
 impl Write for SendHttpRequest {
     fn get_buffer(&mut self) -> &[u8] {
