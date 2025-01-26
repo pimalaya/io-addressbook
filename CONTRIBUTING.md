@@ -32,6 +32,25 @@ Finally, you can build a release with `--release`:
 cargo build --no-default-features --release
 ```
 
+## Structure
+
+The core library [`addressbook`](https://github.com/pimalaya/addressbook/tree/master/addressbook-lib) follows the [Sans I/O](https://sans-io.readthedocs.io/) pattern, which means that it does not rely on any standard environment or async runtime. These are provided by external libraries.
+
+![sans-io](./sans-io.svg)
+
+- A flow is a state machine defined as a Rust `Iterator` producing I/O request(s).
+- The I/O connector is responsible for executing the requested I/O.
+- The I/O connector communicates with the flow via its inner I/O state (take input, set output).
+- A flow that does not produce any(more) I/O requests is considered terminated.
+- A terminated flow exposes an `output()` function that takes the final output away from itself.
+
+This repository comes with few I/O connectors:
+
+- [`addressbook-carddav`](https://github.com/pimalaya/addressbook/tree/master/addressbook-carddav), a standard (blocking) CardDAV I/O connector
+- [`addressbook-carddav-rustls`](https://github.com/pimalaya/addressbook/tree/master/addressbook-carddav-rustl), a standard (blocking) CardDAV I/O connector over TLS using [`rustls`](https://docs.rs/rustls/latest/rustls/)
+- [`addressbook-carddav-native-tls`](https://github.com/pimalaya/addressbook/tree/master/addressbook-carddav-native-tls), a standard (blocking) CardDAV I/O connector over TLS using [`native-tls`](https://docs.rs/native-tls/latest/native_tls/)
+- [`addressbook-vdir`](https://github.com/pimalaya/addressbook/tree/master/addressbook-vdir), a standard (blocking) [vdir](https://vdirsyncer.pimutils.org/en/stable/vdir.html) I/O connector
+
 ## Commit style
 
 Addressbook libraries follow the [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary).
