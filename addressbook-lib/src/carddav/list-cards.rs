@@ -2,8 +2,11 @@ use serde::Deserialize;
 use tracing::{debug, trace};
 
 use crate::{
-    http::{Request, SendHttpRequest},
-    tcp, Card, Cards,
+    carddav::{
+        http::{Request, SendHttpRequest},
+        tcp,
+    },
+    Card, Cards,
 };
 
 use super::{

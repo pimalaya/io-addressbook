@@ -6,7 +6,7 @@ use std::{
     net::TcpStream,
 };
 
-use addressbook::tcp;
+use addressbook::carddav::tcp;
 use tracing::{instrument, trace};
 
 #[derive(Debug)]

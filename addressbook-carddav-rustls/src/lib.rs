@@ -7,7 +7,7 @@ use std::{
     sync::Arc,
 };
 
-use addressbook::tcp;
+use addressbook::carddav::tcp;
 use rustls::{ClientConfig, ClientConnection, StreamOwned};
 use thiserror::Error;
 use tracing::{instrument, trace};

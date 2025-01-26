@@ -1,5 +1,7 @@
 pub mod client;
+pub mod http;
 pub mod response;
+pub mod tcp;
 
 #[path = "addressbook-home-set.rs"]
 pub mod addressbook_home_set;

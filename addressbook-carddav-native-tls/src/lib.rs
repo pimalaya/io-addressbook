@@ -6,7 +6,7 @@ use std::{
     net::TcpStream,
 };
 
-use addressbook::tcp;
+use addressbook::carddav::tcp;
 use native_tls::{TlsConnector, TlsStream};
 use thiserror::Error;
 use tracing::{instrument, trace};

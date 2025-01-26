@@ -3,8 +3,11 @@ use std::string::FromUtf8Error;
 use thiserror::Error;
 
 use crate::{
-    http::{Request, SendHttpRequest},
-    tcp, Card,
+    carddav::{
+        http::{Request, SendHttpRequest},
+        tcp,
+    },
+    Card,
 };
 
 use super::{client::Authentication, Config};

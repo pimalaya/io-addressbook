@@ -3,7 +3,7 @@ use std::mem;
 use memchr::memmem;
 use tracing::trace;
 
-use crate::{http::CRLF, tcp};
+use crate::carddav::{http::CRLF, tcp};
 
 use super::{Request, State, CR, LF};
 

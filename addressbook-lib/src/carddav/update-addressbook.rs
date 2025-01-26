@@ -2,9 +2,12 @@ use serde::Deserialize;
 use tracing::debug;
 
 use crate::{
-    carddav::response::MkcolResponse,
-    http::{Request, SendHttpRequest},
-    tcp, PartialAddressbook,
+    carddav::{
+        http::{Request, SendHttpRequest},
+        response::MkcolResponse,
+        tcp,
+    },
+    PartialAddressbook,
 };
 
 use super::{client::Authentication, Config};
