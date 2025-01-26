@@ -1,7 +1,6 @@
 use crate::{
     http::{Request, SendHttpRequest},
-    tcp::{Io, Read, Write},
-    Card,
+    tcp, Card,
 };
 
 use super::{client::Authentication, Config};
@@ -36,28 +35,14 @@ impl CreateCard {
     }
 }
 
-impl Write for CreateCard {
-    fn get_buffer(&mut self) -> &[u8] {
-        self.http.get_buffer()
-    }
-
-    fn set_wrote_bytes_count(&mut self, count: usize) {
-        self.http.set_wrote_bytes_count(count)
-    }
-}
-
-impl Read for CreateCard {
-    fn get_buffer_mut(&mut self) -> &mut [u8] {
-        self.http.get_buffer_mut()
-    }
-
-    fn set_read_bytes_count(&mut self, count: usize) {
-        self.http.set_read_bytes_count(count)
+impl AsMut<tcp::State> for CreateCard {
+    fn as_mut(&mut self) -> &mut tcp::State {
+        self.http.as_mut()
     }
 }
 
 impl Iterator for CreateCard {
-    type Item = Io;
+    type Item = tcp::Io;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.http.next()

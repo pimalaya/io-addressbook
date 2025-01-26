@@ -24,6 +24,7 @@ name = "addressbook-carddav"
 version = "0.1.0"
 dependencies = [
  "addressbook",
+ "tracing",
  "tracing-subscriber",
 ]
 
@@ -34,6 +35,7 @@ dependencies = [
  "addressbook",
  "native-tls",
  "thiserror 2.0.11",
+ "tracing",
  "tracing-subscriber",
 ]
 
@@ -45,6 +47,7 @@ dependencies = [
  "rustls",
  "rustls-platform-verifier",
  "thiserror 2.0.11",
+ "tracing",
  "tracing-subscriber",
 ]
 

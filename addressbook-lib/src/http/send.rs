@@ -3,10 +3,7 @@ use std::mem;
 use memchr::memmem;
 use tracing::trace;
 
-use crate::{
-    http::CRLF,
-    tcp::{Io, Read, Write},
-};
+use crate::{http::CRLF, tcp};
 
 use super::{Request, State, CR, LF};
 
@@ -16,12 +13,7 @@ const CONTENT_LENGTH: &[u8] = b"Content-Length";
 #[derive(Debug)]
 pub struct SendHttpRequest {
     state: Option<State>,
-
-    write_buffer: Vec<u8>,
-    wrote_bytes_count: usize,
-
-    read_buffer: Vec<u8>,
-    read_bytes_count: usize,
+    tcp_state: tcp::State,
 
     request: Request,
     response_bytes: Vec<u8>,
@@ -33,12 +25,7 @@ impl SendHttpRequest {
     pub fn new(request: Request) -> Self {
         Self {
             state: Some(State::SerializeHttpRequest),
-
-            write_buffer: vec![],
-            wrote_bytes_count: 0,
-
-            read_buffer: vec![0; 512],
-            read_bytes_count: 0,
+            tcp_state: tcp::State::new(),
 
             request,
             response_bytes: vec![],
@@ -76,28 +63,14 @@ impl SendHttpRequest {
     }
 }
 
-impl Write for SendHttpRequest {
-    fn get_buffer(&mut self) -> &[u8] {
-        &self.write_buffer
-    }
-
-    fn set_wrote_bytes_count(&mut self, count: usize) {
-        self.wrote_bytes_count = count;
-    }
-}
-
-impl Read for SendHttpRequest {
-    fn get_buffer_mut(&mut self) -> &mut [u8] {
-        &mut self.read_buffer
-    }
-
-    fn set_read_bytes_count(&mut self, count: usize) {
-        self.read_bytes_count = count;
+impl AsMut<tcp::State> for SendHttpRequest {
+    fn as_mut(&mut self) -> &mut tcp::State {
+        &mut self.tcp_state
     }
 }
 
 impl Iterator for SendHttpRequest {
-    type Item = Io;
+    type Item = tcp::Io;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -107,24 +80,24 @@ impl Iterator for SendHttpRequest {
                     self.state = Some(State::SendHttpRequest);
                     let mut request = Request::default();
                     mem::swap(&mut request, &mut self.request);
-                    self.write_buffer = request.into();
-                    trace!(request = ?String::from_utf8_lossy(&self.write_buffer), "send full");
-                    return Some(Io::Write);
+                    self.tcp_state.write_buffer = request.into();
+                    trace!(request = ?String::from_utf8_lossy(&self.tcp_state.write_buffer), "send full");
+                    return Some(tcp::Io::Write);
                 }
                 Some(State::SendHttpRequest) => {
                     self.state = Some(State::ReceiveHttpResponse);
-                    return Some(Io::Read);
+                    return Some(tcp::Io::Read);
                 }
                 Some(State::ReceiveHttpResponse) => {
-                    if self.read_bytes_count == 0 {
+                    if self.tcp_state.read_bytes_count == 0 {
                         return None;
                     }
 
-                    let bytes = &self.read_buffer[..self.read_bytes_count];
+                    let bytes = &self.tcp_state.read_buffer[..self.tcp_state.read_bytes_count];
                     self.response_bytes.extend(bytes);
 
-                    let i = self.read_bytes_count;
-                    let n = self.read_buffer.len();
+                    let i = self.tcp_state.read_bytes_count;
+                    let n = self.tcp_state.read_buffer.len();
                     trace!(response = ?String::from_utf8_lossy(bytes), "receive chunk {i}/{n}");
 
                     if self.response_body_start == 0 {
@@ -175,7 +148,7 @@ impl Iterator for SendHttpRequest {
                     }
 
                     self.state = Some(State::ReceiveHttpResponse);
-                    return Some(Io::Read);
+                    return Some(tcp::Io::Read);
                 }
             }
         }

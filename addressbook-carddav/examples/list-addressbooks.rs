@@ -1,6 +1,6 @@
 use std::io::stderr;
 
-use addressbook::{carddav::Client, tcp};
+use addressbook::carddav::Client;
 use addressbook_carddav::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -15,14 +15,7 @@ fn main() {
     let mut flow = client.list_addressbooks();
 
     while let Some(io) = flow.next() {
-        match io {
-            tcp::Io::Read => {
-                tcp.read(&mut flow).unwrap();
-            }
-            tcp::Io::Write => {
-                tcp.write(&mut flow).unwrap();
-            }
-        }
+        tcp.execute(&mut flow, io).unwrap()
     }
 
     let addressbooks = flow.output().unwrap();

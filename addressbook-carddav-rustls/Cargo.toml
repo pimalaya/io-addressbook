@@ -15,6 +15,7 @@ repository = "https://github.com/pimalaya/addressbook/"
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+default = ["ring"]
 aws-lc = ["rustls/aws_lc_rs"]
 ring = ["rustls/ring"]
 
@@ -26,3 +27,4 @@ addressbook = { version = "0.1", default-features = false, features = ["carddav"
 rustls = { version = "0.23", default-features = false, features = ["logging", "std", "tls12"] }
 rustls-platform-verifier = "0.5"
 thiserror = "2"
+tracing = "0.1"

@@ -1,6 +1,6 @@
 use std::io::stderr;
 
-use addressbook::{carddav::Client, tcp};
+use addressbook::carddav::Client;
 use addressbook_carddav_rustls::{Connector, CryptoProvider};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -29,14 +29,7 @@ fn main() {
     let mut flow = client.list_addressbooks();
 
     while let Some(io) = flow.next() {
-        match io {
-            tcp::Io::Read => {
-                tls.read(&mut flow).unwrap();
-            }
-            tcp::Io::Write => {
-                tls.write(&mut flow).unwrap();
-            }
-        }
+        tls.execute(&mut flow, io).unwrap()
     }
 
     let addressbooks = flow.output().unwrap();

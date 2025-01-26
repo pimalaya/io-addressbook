@@ -1,6 +1,6 @@
 use std::io::stderr;
 
-use addressbook::{carddav::Client, tcp, Addressbook, PartialAddressbook};
+use addressbook::{carddav::Client, Addressbook, PartialAddressbook};
 use addressbook_carddav_native_tls::Connector;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -19,14 +19,7 @@ fn main() {
     let mut tls = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.create_addressbook(addressbook);
     while let Some(io) = flow.next() {
-        match io {
-            tcp::Io::Read => {
-                tls.read(&mut flow).unwrap();
-            }
-            tcp::Io::Write => {
-                tls.write(&mut flow).unwrap();
-            }
-        }
+        tls.execute(&mut flow, io).unwrap()
     }
 
     let addressbook = flow.output().unwrap();
@@ -41,14 +34,7 @@ fn main() {
     tls = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.update_addressbook(addressbook);
     while let Some(io) = flow.next() {
-        match io {
-            tcp::Io::Read => {
-                tls.read(&mut flow).unwrap();
-            }
-            tcp::Io::Write => {
-                tls.write(&mut flow).unwrap();
-            }
-        }
+        tls.execute(&mut flow, io).unwrap()
     }
 
     let addressbook = flow.output().unwrap();
@@ -58,14 +44,7 @@ fn main() {
     tls = Connector::connect(&client.config.hostname, client.config.port).unwrap();
     let mut flow = client.delete_addressbook(&addressbook.id);
     while let Some(io) = flow.next() {
-        match io {
-            tcp::Io::Read => {
-                tls.read(&mut flow).unwrap();
-            }
-            tcp::Io::Write => {
-                tls.write(&mut flow).unwrap();
-            }
-        }
+        tls.execute(&mut flow, io).unwrap()
     }
 
     let success = flow.output().unwrap();

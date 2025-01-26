@@ -24,3 +24,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 addressbook = { version = "0.1", default-features = false, features = ["carddav"] }
 native-tls = "0.2"
 thiserror = "2"
+tracing = "0.1"

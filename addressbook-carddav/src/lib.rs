@@ -7,6 +7,7 @@ use std::{
 };
 
 use addressbook::tcp;
+use tracing::{instrument, trace};
 
 #[derive(Debug)]
 pub struct Connector {
@@ -19,17 +20,31 @@ impl Connector {
         Ok(Self { stream })
     }
 
-    pub fn read<F: tcp::Read>(&mut self, flow: &mut F) -> Result<()> {
-        let buffer = flow.get_buffer_mut();
+    #[instrument(skip_all)]
+    pub fn execute<F: AsMut<tcp::State>>(&mut self, flow: &mut F, io: tcp::Io) -> Result<()> {
+        let state = flow.as_mut();
+
+        match io {
+            tcp::Io::Read => self.read(state),
+            tcp::Io::Write => self.write(state),
+        }
+    }
+
+    #[instrument(skip_all)]
+    fn read(&mut self, state: &mut tcp::State) -> Result<()> {
+        let buffer = state.get_buffer_mut();
         let read_bytes_count = self.stream.read(buffer)?;
-        flow.set_read_bytes_count(read_bytes_count);
+        trace!("read bytes {read_bytes_count}/{}", buffer.len());
+        state.set_read_bytes_count(read_bytes_count);
         Ok(())
     }
 
-    pub fn write<F: tcp::Write>(&mut self, flow: &mut F) -> Result<()> {
-        let buffer = flow.get_buffer();
+    #[instrument(skip_all)]
+    fn write(&mut self, state: &mut tcp::State) -> Result<()> {
+        let buffer = state.get_buffer();
         let wrote_bytes_count = self.stream.write(buffer)?;
-        flow.set_wrote_bytes_count(wrote_bytes_count);
+        trace!("wrote bytes {wrote_bytes_count}/{}", buffer.len());
+        state.set_wrote_bytes_count(wrote_bytes_count);
         Ok(())
     }
 }
