@@ -3,14 +3,13 @@ use tracing::{debug, trace};
 
 use crate::{
     carddav::{
+        config::Authentication,
         http::{Request, SendHttpRequest},
         response::Multistatus,
-        tcp,
+        tcp, Config,
     },
     Addressbook, Addressbooks,
 };
-
-use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct ListAddressbooks {
@@ -18,7 +17,7 @@ pub struct ListAddressbooks {
 }
 
 impl ListAddressbooks {
-    const BODY: &str = include_str!("./list-addressbooks.xml");
+    const BODY: &'static str = include_str!("./list-addressbooks.xml");
 
     pub fn new(config: &Config) -> Self {
         let mut request = Request::propfind(&config.home_uri, config.http_version.as_ref())
@@ -122,8 +121,8 @@ pub struct ResourceType {
     pub addressbook: Option<()>,
 }
 
-impl AsMut<tcp::State> for ListAddressbooks {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for ListAddressbooks {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

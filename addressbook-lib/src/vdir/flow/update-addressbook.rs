@@ -3,9 +3,13 @@ use std::{collections::HashMap, env::temp_dir, mem, path::PathBuf};
 use tracing::{debug, instrument, trace};
 use uuid::Uuid;
 
-use crate::{vdir::fs::state::Task, PartialAddressbook};
-
-use super::{fs, Config, COLOR, DESCRIPTION, DISPLAYNAME};
+use crate::{
+    vdir::{
+        fs::{self, state::Task},
+        Config, COLOR, DESCRIPTION, DISPLAYNAME,
+    },
+    PartialAddressbook,
+};
 
 #[derive(Debug)]
 pub enum Step {

@@ -2,13 +2,10 @@ use serde::Deserialize;
 use tracing::{debug, trace};
 
 use crate::carddav::{
+    config::Authentication,
     http::{Request, SendHttpRequest},
-    tcp,
-};
-
-use super::{
-    client::{Authentication, Config},
     response::{HrefProp, Multistatus},
+    tcp, Config,
 };
 
 #[derive(Debug)]
@@ -77,8 +74,8 @@ pub struct Prop {
     pub current_user_principal: HrefProp,
 }
 
-impl AsMut<tcp::State> for CurrentUserPrincipal {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for CurrentUserPrincipal {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

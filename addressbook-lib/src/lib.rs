@@ -3,9 +3,10 @@
 
 #[cfg(feature = "carddav")]
 pub mod carddav;
-mod types;
 #[cfg(feature = "vdir")]
 pub mod vdir;
+
+mod types;
 
 #[doc(inline)]
 pub use self::types::*;

@@ -2,14 +2,10 @@ use serde::Deserialize;
 use tracing::{debug, trace};
 
 use crate::carddav::{
+    config::Authentication,
     http::{Request, SendHttpRequest},
-    tcp,
-};
-
-use super::{
-    client::Authentication,
     response::{HrefProp, Multistatus},
-    Config,
+    tcp, Config,
 };
 
 #[derive(Debug)]
@@ -78,8 +74,8 @@ pub struct Prop {
     pub addressbook_home_set: HrefProp,
 }
 
-impl AsMut<tcp::State> for AddressbookHomeSet {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for AddressbookHomeSet {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

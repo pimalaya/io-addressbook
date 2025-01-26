@@ -2,9 +2,10 @@ use std::path::PathBuf;
 
 use tracing::{debug, instrument, trace};
 
-use crate::vdir::fs::state::Task;
-
-use super::{fs, Config};
+use crate::vdir::{
+    fs::{self, state::Task},
+    Config,
+};
 
 #[derive(Debug)]
 pub struct DeleteAddressbook {

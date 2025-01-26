@@ -1,6 +1,6 @@
+mod flow;
 mod request;
-mod send;
-mod state;
 
 #[doc(inline)]
-pub use self::{request::*, send::*, state::*};
+pub use self::flow::*;
+pub(crate) use self::request::{Request, CR, CRLF, LF};

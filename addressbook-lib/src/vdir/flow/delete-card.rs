@@ -2,60 +2,56 @@ use std::path::PathBuf;
 
 use tracing::{debug, instrument, trace};
 
-use crate::{vdir::fs::state::Task, Card};
-
-use super::{fs, Config, VCF};
+use crate::vdir::{
+    fs::{self, state::Task},
+    Config, VCF,
+};
 
 #[derive(Debug)]
-pub struct ReadCard {
+pub struct DeleteCard {
     state: fs::State,
-    card_id: String,
     card_path: PathBuf,
     done: bool,
 }
 
-impl ReadCard {
-    pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> Self {
-        let card_id = card_id.to_string();
+impl DeleteCard {
+    pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl AsRef<str>) -> Self {
         let card_path = config
             .home_dir
             .join(addressbook_id.as_ref())
-            .join(&card_id)
+            .join(card_id.as_ref())
             .with_extension(VCF);
 
         Self {
             state: fs::State::default(),
-            card_id,
             card_path,
             done: false,
         }
     }
 
     #[instrument(skip_all)]
-    pub fn output(self) -> Option<Card> {
+    pub fn output(self) -> Option<PathBuf> {
         if !self.done {
             debug!("invalid step to get output");
             return None;
         };
 
-        let Task::Done(files) = self.state.read_files else {
+        if !self.state.remove_files.is_done() {
             debug!(state = ?self.state, "invalid state to get output");
             return None;
-        };
+        }
 
-        let (_, content) = files.into_iter().next()?;
-        let content = String::from_utf8(content).ok()?;
-        Card::parse(self.card_id, content)
+        Some(self.card_path)
     }
 }
 
-impl AsMut<fs::State> for ReadCard {
+impl AsMut<fs::State> for DeleteCard {
     fn as_mut(&mut self) -> &mut fs::State {
         &mut self.state
     }
 }
 
-impl Iterator for ReadCard {
+impl Iterator for DeleteCard {
     type Item = fs::Io;
 
     #[instrument(skip_all)]
@@ -65,10 +61,9 @@ impl Iterator for ReadCard {
         if self.done {
             None
         } else {
-            let paths = vec![self.card_path.clone()];
-            self.state.read_files = Task::Pending(paths);
+            self.state.remove_files = Task::Pending(vec![self.card_path.clone()]);
             self.done = true;
-            Some(fs::Io::ReadFiles)
+            Some(fs::Io::RemoveFiles)
         }
     }
 }

@@ -23,7 +23,6 @@ pub struct PropstatResponse<T> {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct StatusResponse {
-    pub href: Value,
     pub status: Status,
 }
 

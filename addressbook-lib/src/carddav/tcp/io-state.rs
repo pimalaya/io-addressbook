@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub struct State {
+pub struct IoState {
     pub(crate) write_buffer: Vec<u8>,
     pub(crate) wrote_bytes_count: usize,
 
@@ -7,7 +7,7 @@ pub struct State {
     pub(crate) read_bytes_count: usize,
 }
 
-impl State {
+impl IoState {
     pub fn new() -> Self {
         Self {
             write_buffer: vec![],

@@ -3,14 +3,13 @@ use tracing::debug;
 
 use crate::{
     carddav::{
+        config::Authentication,
         http::{Request, SendHttpRequest},
         response::MkcolResponse,
-        tcp,
+        tcp, Config,
     },
     PartialAddressbook,
 };
-
-use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct UpdateAddressbook {
@@ -93,8 +92,8 @@ pub struct Prop {
     pub addressbook_description: Option<String>,
 }
 
-impl AsMut<tcp::State> for UpdateAddressbook {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for UpdateAddressbook {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

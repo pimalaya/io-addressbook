@@ -1,9 +1,8 @@
 use crate::carddav::{
+    config::Authentication,
     http::{Request, SendHttpRequest},
-    tcp,
+    tcp, Config,
 };
-
-use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct DeleteCard {
@@ -32,8 +31,8 @@ impl DeleteCard {
     }
 }
 
-impl AsMut<tcp::State> for DeleteCard {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for DeleteCard {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

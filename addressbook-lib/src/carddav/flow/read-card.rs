@@ -4,13 +4,12 @@ use thiserror::Error;
 
 use crate::{
     carddav::{
+        config::Authentication,
         http::{Request, SendHttpRequest},
-        tcp,
+        tcp, Config,
     },
     Card,
 };
-
-use super::{client::Authentication, Config};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -53,8 +52,8 @@ impl ReadCard {
     }
 }
 
-impl AsMut<tcp::State> for ReadCard {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for ReadCard {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

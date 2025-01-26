@@ -4,8 +4,9 @@ use secrecy::{ExposeSecret, SecretString};
 
 pub const CR: u8 = b'\r';
 pub const LF: u8 = b'\n';
-pub const SP: u8 = b' ';
 pub const CRLF: [u8; 2] = [CR, LF];
+
+const SP: u8 = b' ';
 
 #[derive(Clone, Debug, Default)]
 pub struct Request {
@@ -13,13 +14,13 @@ pub struct Request {
 }
 
 impl Request {
-    pub const DELETE: &str = "DELETE";
-    pub const GET: &str = "GET";
-    pub const MKCOL: &str = "MKCOL";
-    pub const PROPFIND: &str = "PROPFIND";
-    pub const PROPPATCH: &str = "PROPPATCH";
-    pub const PUT: &str = "PUT";
-    pub const REPORT: &str = "REPORT";
+    pub const DELETE: &'static str = "DELETE";
+    pub const GET: &'static str = "GET";
+    pub const MKCOL: &'static str = "MKCOL";
+    pub const PROPFIND: &'static str = "PROPFIND";
+    pub const PROPPATCH: &'static str = "PROPPATCH";
+    pub const PUT: &'static str = "PUT";
+    pub const REPORT: &'static str = "REPORT";
 
     pub fn new(method: &str, uri: &str, version: &str) -> Self {
         let mut bytes = Vec::new();

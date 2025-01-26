@@ -1,11 +1,11 @@
 use serde::Deserialize;
 
 use crate::carddav::{
+    config::Authentication,
     http::{Request, SendHttpRequest},
-    tcp,
+    response::StatusResponse,
+    tcp, Config,
 };
-
-use super::{client::Authentication, response::StatusResponse, Config};
 
 #[derive(Debug)]
 pub struct DeleteAddressbook {
@@ -13,7 +13,7 @@ pub struct DeleteAddressbook {
 }
 
 impl DeleteAddressbook {
-    const BODY: &str = "";
+    const BODY: &'static str = "";
 
     pub fn new(config: &Config, id: impl AsRef<str>) -> Self {
         let base_uri = config.home_uri.trim_end_matches('/');
@@ -43,8 +43,8 @@ pub struct Response {
     pub response: StatusResponse,
 }
 
-impl AsMut<tcp::State> for DeleteAddressbook {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for DeleteAddressbook {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

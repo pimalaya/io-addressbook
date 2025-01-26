@@ -2,9 +2,13 @@ use std::path::PathBuf;
 
 use tracing::{debug, instrument, trace};
 
-use crate::{vdir::fs::state::Task, Card, Cards};
-
-use super::{fs, Config};
+use crate::{
+    vdir::{
+        fs::{self, state::Task},
+        Config,
+    },
+    Card, Cards,
+};
 
 #[derive(Debug)]
 pub enum Step {

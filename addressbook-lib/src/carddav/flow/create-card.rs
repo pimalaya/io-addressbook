@@ -1,12 +1,11 @@
 use crate::{
     carddav::{
+        config::Authentication,
         http::{Request, SendHttpRequest},
-        tcp,
+        tcp, Config,
     },
     Card,
 };
-
-use super::{client::Authentication, Config};
 
 #[derive(Debug)]
 pub struct CreateCard {
@@ -38,8 +37,8 @@ impl CreateCard {
     }
 }
 
-impl AsMut<tcp::State> for CreateCard {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for CreateCard {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

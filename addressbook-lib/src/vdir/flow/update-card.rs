@@ -3,9 +3,13 @@ use std::{collections::HashMap, env::temp_dir, path::PathBuf};
 use tracing::{debug, instrument, trace};
 use uuid::Uuid;
 
-use crate::{vdir::fs::state::Task, Card};
-
-use super::{fs, Config, VCF};
+use crate::{
+    vdir::{
+        fs::{self, state::Task},
+        Config, VCF,
+    },
+    Card,
+};
 
 #[derive(Debug)]
 pub enum Step {

@@ -3,16 +3,12 @@ use tracing::{debug, trace};
 
 use crate::{
     carddav::{
+        config::Authentication,
         http::{Request, SendHttpRequest},
-        tcp,
+        response::{Multistatus, Value},
+        tcp, Config,
     },
     Card, Cards,
-};
-
-use super::{
-    client::Authentication,
-    response::{Multistatus, Value},
-    Config,
 };
 
 #[derive(Debug)]
@@ -107,8 +103,8 @@ pub struct Prop {
     pub address_data: Option<Value>,
 }
 
-impl AsMut<tcp::State> for ListCards {
-    fn as_mut(&mut self) -> &mut tcp::State {
+impl AsMut<tcp::IoState> for ListCards {
+    fn as_mut(&mut self) -> &mut tcp::IoState {
         self.http.as_mut()
     }
 }

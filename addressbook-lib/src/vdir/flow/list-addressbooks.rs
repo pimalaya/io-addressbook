@@ -3,11 +3,12 @@ use std::{mem, path::PathBuf};
 use tracing::{debug, instrument, trace};
 
 use crate::{
-    vdir::{fs::state::Task, COLOR, DESCRIPTION, DISPLAYNAME},
+    vdir::{
+        fs::{self, state::Task},
+        Config, COLOR, DESCRIPTION, DISPLAYNAME,
+    },
     Addressbook, Addressbooks,
 };
-
-use super::{fs, Config};
 
 #[derive(Debug)]
 pub enum Step {
