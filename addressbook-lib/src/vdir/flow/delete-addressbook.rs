@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tracing::{debug, instrument, trace};
 
 use crate::vdir::{
-    fs::{self, state::Task},
+    fs::{self, IoState},
     Config,
 };
 
@@ -52,7 +52,7 @@ impl Iterator for DeleteAddressbook {
         if self.done {
             None
         } else {
-            self.state.remove_dir = Task::Pending(self.addressbook_path.clone());
+            self.state.remove_dir = IoState::Pending(self.addressbook_path.clone());
             self.done = true;
             Some(fs::Io::RemoveDir)
         }

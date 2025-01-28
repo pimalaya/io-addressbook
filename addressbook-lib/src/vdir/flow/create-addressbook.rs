@@ -4,7 +4,7 @@ use tracing::{debug, instrument, trace};
 
 use crate::{
     vdir::{
-        fs::{self, state::Task},
+        fs::{self, IoState},
         Config, COLOR, DESCRIPTION, DISPLAYNAME,
     },
     Addressbook,
@@ -63,7 +63,7 @@ impl Iterator for CreateAddressbook {
 
         match self.next_step {
             Step::CreateDir => {
-                self.state.create_dir = Task::Pending(self.addressbook_path.clone());
+                self.state.create_dir = IoState::Pending(self.addressbook_path.clone());
                 self.next_step = Step::CreateFiles;
                 Some(fs::Io::CreateDir)
             }
@@ -91,7 +91,7 @@ impl Iterator for CreateAddressbook {
                     contents.insert(path, content);
                 }
 
-                self.state.create_files = Task::Pending(contents);
+                self.state.create_files = IoState::Pending(contents);
                 self.next_step = Step::Done;
                 Some(fs::Io::CreateFiles)
             }

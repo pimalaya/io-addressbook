@@ -15,8 +15,8 @@ rustup update
 
 or install manually the following dependencies:
 
-- [cargo](https://doc.rust-lang.org/cargo/) (`v1.82`)
-- [rustc](https://doc.rust-lang.org/stable/rustc/platform-support.html) (`v1.82`)
+- [cargo](https://doc.rust-lang.org/cargo/)
+- [rustc](https://doc.rust-lang.org/stable/rustc/platform-support.html)
 
 ## Build
 
@@ -34,7 +34,7 @@ cargo build --no-default-features --release
 
 ## Structure
 
-The core library [`addressbook`](https://github.com/pimalaya/addressbook/tree/master/addressbook-lib) follows the [Sans I/O](https://sans-io.readthedocs.io/) pattern, which means that it does not rely on any standard environment or async runtime. These are provided by external libraries.
+The core library [`addressbook`](https://github.com/pimalaya/addressbook/tree/master/addressbook-lib) follows the [Sans I/O](https://sans-io.readthedocs.io/) pattern. It does not rely on any standard environment or async runtime. These are provided by external libraries called I/O connectors.
 
 ![sans-io](./sans-io.svg)
 

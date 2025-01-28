@@ -4,7 +4,7 @@ use tracing::{debug, instrument, trace};
 
 use crate::{
     vdir::{
-        fs::{self, state::Task},
+        fs::{self, IoState},
         Config, VCF,
     },
     Card,
@@ -68,7 +68,7 @@ impl Iterator for CreateCard {
         } else {
             let content = self.card.to_string().as_bytes().to_vec();
             let contents = HashMap::from_iter(Some((self.card_path.clone(), content)));
-            self.state.create_files = Task::Pending(contents);
+            self.state.create_files = IoState::Pending(contents);
             self.done = true;
             Some(fs::Io::CreateFiles)
         }

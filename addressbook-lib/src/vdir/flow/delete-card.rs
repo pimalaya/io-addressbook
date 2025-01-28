@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tracing::{debug, instrument, trace};
 
 use crate::vdir::{
-    fs::{self, state::Task},
+    fs::{self, IoState},
     Config, VCF,
 };
 
@@ -61,7 +61,7 @@ impl Iterator for DeleteCard {
         if self.done {
             None
         } else {
-            self.state.remove_files = Task::Pending(vec![self.card_path.clone()]);
+            self.state.remove_files = IoState::Pending(vec![self.card_path.clone()]);
             self.done = true;
             Some(fs::Io::RemoveFiles)
         }

@@ -74,8 +74,8 @@ pub struct Prop {
     pub addressbook_home_set: HrefProp,
 }
 
-impl AsMut<tcp::IoState> for AddressbookHomeSet {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for AddressbookHomeSet {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

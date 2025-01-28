@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     vdir::{
-        fs::{self, state::Task},
+        fs::{self, IoState},
         Config, VCF,
     },
     Card,
@@ -77,10 +77,10 @@ impl Iterator for UpdateCard {
                 let path = temp_dir().join(Uuid::new_v4().to_string());
 
                 let create_files = HashMap::from_iter(Some((path.clone(), content)));
-                self.state.create_files = Task::Pending(create_files);
+                self.state.create_files = IoState::Pending(create_files);
 
                 let move_files = HashMap::from_iter(Some((path, self.card_path.clone())));
-                self.state.move_files = Task::Pending(move_files);
+                self.state.move_files = IoState::Pending(move_files);
 
                 self.next_step = Step::MoveFiles;
                 Some(fs::Io::CreateFiles)

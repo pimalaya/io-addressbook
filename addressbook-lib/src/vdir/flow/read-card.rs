@@ -4,7 +4,7 @@ use tracing::{debug, instrument, trace};
 
 use crate::{
     vdir::{
-        fs::{self, state::Task},
+        fs::{self, IoState},
         Config, VCF,
     },
     Card,
@@ -42,7 +42,7 @@ impl ReadCard {
             return None;
         };
 
-        let Task::Done(files) = self.state.read_files else {
+        let IoState::Done(files) = self.state.read_files else {
             debug!(state = ?self.state, "invalid state to get output");
             return None;
         };
@@ -70,7 +70,7 @@ impl Iterator for ReadCard {
             None
         } else {
             let paths = vec![self.card_path.clone()];
-            self.state.read_files = Task::Pending(paths);
+            self.state.read_files = IoState::Pending(paths);
             self.done = true;
             Some(fs::Io::ReadFiles)
         }

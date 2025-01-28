@@ -1,20 +1,24 @@
-#[derive(Debug)]
-pub struct IoState {
-    pub(crate) write_buffer: Vec<u8>,
-    pub(crate) wrote_bytes_count: usize,
-
-    pub(crate) read_buffer: Vec<u8>,
-    pub(crate) read_bytes_count: usize,
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Io {
+    Read,
+    Write,
 }
 
-impl IoState {
+#[derive(Debug)]
+pub struct State {
+    pub(crate) read_buffer: Vec<u8>,
+    pub(crate) read_bytes_count: usize,
+    pub(crate) write_buffer: Vec<u8>,
+    pub(crate) wrote_bytes_count: usize,
+}
+
+impl State {
     pub fn new() -> Self {
         Self {
-            write_buffer: vec![],
-            wrote_bytes_count: 0,
-
             read_buffer: vec![0; 512],
             read_bytes_count: 0,
+            write_buffer: vec![],
+            wrote_bytes_count: 0,
         }
     }
 

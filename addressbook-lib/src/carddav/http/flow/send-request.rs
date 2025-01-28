@@ -20,7 +20,7 @@ enum Step {
 
 #[derive(Debug)]
 pub struct SendHttpRequest {
-    state: tcp::IoState,
+    state: tcp::State,
     step: Option<Step>,
 
     request: Request,
@@ -33,7 +33,7 @@ impl SendHttpRequest {
     pub fn new(request: Request) -> Self {
         Self {
             step: Some(Step::SerializeHttpRequest),
-            state: tcp::IoState::new(),
+            state: tcp::State::new(),
 
             request,
             response_bytes: vec![],
@@ -71,8 +71,8 @@ impl SendHttpRequest {
     }
 }
 
-impl AsMut<tcp::IoState> for SendHttpRequest {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for SendHttpRequest {
+    fn as_mut(&mut self) -> &mut tcp::State {
         &mut self.state
     }
 }

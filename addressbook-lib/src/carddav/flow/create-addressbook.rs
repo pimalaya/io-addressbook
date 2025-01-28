@@ -95,8 +95,8 @@ pub struct Prop {
     pub addressbook_description: Option<String>,
 }
 
-impl AsMut<tcp::IoState> for CreateAddressbook {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for CreateAddressbook {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

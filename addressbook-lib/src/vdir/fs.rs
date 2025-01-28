@@ -3,16 +3,26 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Io {
+    CreateDir,
+    CreateFiles,
+    ReadDir,
+    ReadFiles,
+    MoveFiles,
+    RemoveDir,
+    RemoveFiles,
+}
+
 #[derive(Debug, Default)]
 pub struct State {
-    pub create_dir: Task<PathBuf>,
-    pub read_dir: Task<PathBuf, Vec<PathBuf>>,
-    pub remove_dir: Task<PathBuf>,
-
-    pub create_files: Task<HashMap<PathBuf, Vec<u8>>>,
-    pub read_files: Task<Vec<PathBuf>, HashMap<PathBuf, Vec<u8>>>,
-    pub move_files: Task<HashMap<PathBuf, PathBuf>>,
-    pub remove_files: Task<Vec<PathBuf>>,
+    pub create_dir: IoState<PathBuf, ()>,
+    pub create_files: IoState<HashMap<PathBuf, Vec<u8>>, ()>,
+    pub read_dir: IoState<PathBuf, Vec<PathBuf>>,
+    pub read_files: IoState<Vec<PathBuf>, HashMap<PathBuf, Vec<u8>>>,
+    pub move_files: IoState<HashMap<PathBuf, PathBuf>, ()>,
+    pub remove_dir: IoState<PathBuf, ()>,
+    pub remove_files: IoState<Vec<PathBuf>, ()>,
 }
 
 impl State {
@@ -98,41 +108,41 @@ impl State {
 }
 
 #[derive(Debug, Default)]
-pub enum Task<I, O = ()> {
+pub enum IoState<I, O> {
     #[default]
     Idle,
     Pending(I),
     Done(O),
 }
 
-impl<I, O> Task<I, O> {
+impl<I> IoState<I, ()> {
+    pub fn done(&mut self) -> Option<()> {
+        self.done_with(())
+    }
+}
+
+impl<I, O> IoState<I, O> {
     pub fn pending(&self) -> Option<&I> {
         match self {
-            Task::Idle | Task::Done(_) => None,
-            Task::Pending(input) => Some(input),
+            IoState::Idle | IoState::Done(_) => None,
+            IoState::Pending(input) => Some(input),
         }
     }
 
     pub fn is_done(&self) -> bool {
         match self {
-            Task::Idle | Task::Pending(_) => false,
-            Task::Done(_) => true,
+            IoState::Idle | IoState::Pending(_) => false,
+            IoState::Done(_) => true,
         }
     }
 
     pub fn done_with(&mut self, output: O) -> Option<()> {
         match self {
-            Task::Idle | Task::Done(_) => None,
-            Task::Pending(_) => {
+            IoState::Idle | IoState::Done(_) => None,
+            IoState::Pending(_) => {
                 *self = Self::Done(output);
                 Some(())
             }
         }
-    }
-}
-
-impl<I> Task<I> {
-    pub fn done(&mut self) -> Option<()> {
-        self.done_with(())
     }
 }

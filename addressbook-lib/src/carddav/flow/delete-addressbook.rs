@@ -43,8 +43,8 @@ pub struct Response {
     pub response: StatusResponse,
 }
 
-impl AsMut<tcp::IoState> for DeleteAddressbook {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for DeleteAddressbook {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

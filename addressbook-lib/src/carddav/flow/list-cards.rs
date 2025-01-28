@@ -103,8 +103,8 @@ pub struct Prop {
     pub address_data: Option<Value>,
 }
 
-impl AsMut<tcp::IoState> for ListCards {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for ListCards {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

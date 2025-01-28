@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     vdir::{
-        fs::{self, state::Task},
+        fs::{self, IoState},
         Config, COLOR, DESCRIPTION, DISPLAYNAME,
     },
     PartialAddressbook,
@@ -90,7 +90,7 @@ impl Iterator for UpdateAddressbook {
                     self.move_files.insert(src, dest);
                 }
 
-                self.state.create_files = Task::Pending(create_files);
+                self.state.create_files = IoState::Pending(create_files);
                 self.next_step = Step::MoveFiles;
                 Some(fs::Io::CreateFiles)
             }
@@ -103,7 +103,7 @@ impl Iterator for UpdateAddressbook {
                 let mut move_files = HashMap::new();
                 mem::swap(&mut move_files, &mut self.move_files);
 
-                self.state.move_files = Task::Pending(move_files);
+                self.state.move_files = IoState::Pending(move_files);
                 self.next_step = Step::Done;
                 Some(fs::Io::MoveFiles)
             }

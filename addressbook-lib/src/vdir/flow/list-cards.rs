@@ -4,7 +4,7 @@ use tracing::{debug, instrument, trace};
 
 use crate::{
     vdir::{
-        fs::{self, state::Task},
+        fs::{self, IoState},
         Config,
     },
     Card, Cards,
@@ -62,12 +62,12 @@ impl Iterator for ListCards {
 
         match self.next_step {
             Step::ReadDir => {
-                self.state.read_dir = Task::Pending(self.addressbook_path.clone());
+                self.state.read_dir = IoState::Pending(self.addressbook_path.clone());
                 self.next_step = Step::ReadFiles;
                 Some(fs::Io::ReadDir)
             }
             Step::ReadFiles => {
-                let Task::Done(paths) = &mut self.state.read_dir else {
+                let IoState::Done(paths) = &mut self.state.read_dir else {
                     debug!("invalid state for step {:?}", self.next_step);
                     return None;
                 };
@@ -94,12 +94,12 @@ impl Iterator for ListCards {
                     true
                 });
 
-                self.state.read_files = Task::Pending(paths.drain(..).collect());
+                self.state.read_files = IoState::Pending(paths.drain(..).collect());
                 self.next_step = Step::ParseCards;
                 Some(fs::Io::ReadFiles)
             }
             Step::ParseCards => {
-                let Task::Done(contents) = &mut self.state.read_files else {
+                let IoState::Done(contents) = &mut self.state.read_files else {
                     debug!("invalid state for step {:?}", self.next_step);
                     return None;
                 };

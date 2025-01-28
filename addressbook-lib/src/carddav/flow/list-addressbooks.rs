@@ -121,8 +121,8 @@ pub struct ResourceType {
     pub addressbook: Option<()>,
 }
 
-impl AsMut<tcp::IoState> for ListAddressbooks {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for ListAddressbooks {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

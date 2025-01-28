@@ -52,8 +52,8 @@ impl ReadCard {
     }
 }
 
-impl AsMut<tcp::IoState> for ReadCard {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for ReadCard {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

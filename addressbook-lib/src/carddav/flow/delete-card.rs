@@ -31,8 +31,8 @@ impl DeleteCard {
     }
 }
 
-impl AsMut<tcp::IoState> for DeleteCard {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for DeleteCard {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

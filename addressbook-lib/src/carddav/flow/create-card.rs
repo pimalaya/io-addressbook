@@ -37,8 +37,8 @@ impl CreateCard {
     }
 }
 
-impl AsMut<tcp::IoState> for CreateCard {
-    fn as_mut(&mut self) -> &mut tcp::IoState {
+impl AsMut<tcp::State> for CreateCard {
+    fn as_mut(&mut self) -> &mut tcp::State {
         self.http.as_mut()
     }
 }

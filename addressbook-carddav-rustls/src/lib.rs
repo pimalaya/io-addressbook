@@ -77,7 +77,7 @@ impl Connector {
     }
 
     #[instrument(skip_all)]
-    pub fn execute<F: AsMut<tcp::IoState>>(&mut self, flow: &mut F, io: tcp::Io) -> Result<()> {
+    pub fn execute<F: AsMut<tcp::State>>(&mut self, flow: &mut F, io: tcp::Io) -> Result<()> {
         let state = flow.as_mut();
 
         match io {
@@ -87,7 +87,7 @@ impl Connector {
     }
 
     #[instrument(skip_all)]
-    fn read(&mut self, state: &mut tcp::IoState) -> Result<()> {
+    fn read(&mut self, state: &mut tcp::State) -> Result<()> {
         let buffer = state.get_buffer_mut();
         let read_bytes_count = self.stream.read(buffer)?;
         trace!("read bytes {read_bytes_count}/{}", buffer.len());
@@ -96,7 +96,7 @@ impl Connector {
     }
 
     #[instrument(skip_all)]
-    fn write(&mut self, state: &mut tcp::IoState) -> Result<()> {
+    fn write(&mut self, state: &mut tcp::State) -> Result<()> {
         let buffer = state.get_buffer();
         let wrote_bytes_count = self.stream.write(buffer)?;
         trace!("wrote bytes {wrote_bytes_count}/{}", buffer.len());
