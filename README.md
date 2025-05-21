@@ -1,8 +1,40 @@
-# 📇 addressbook [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
+# I/O Addressbook [![Documentation](https://img.shields.io/docsrs/io-addressbook)](https://docs.rs/io-addressbook/latest/io_addressbook) [![Matrix](https://img.shields.io/matrix/pimalaya:matrix.org?color=success&label=chat)](https://matrix.to/#/#pimalaya:matrix.org)
 
-Rust library to manage contacts.
+Set of **I/O-free** Rust coroutines to manage contacts, based on [io-fs](https://github.com/pimalaya/io-fs) and [io-stream](https://github.com/pimalaya/io-stream).
 
-*🚧 Work in progress, stay tuned! 🚧*
+This library allows you to manage contacts using an I/O-agnostic approach, based on 3 concepts:
+
+### Coroutine
+
+A coroutine is an *I/O-free*, *resumable* and *composable* state machine that **emits I/O requests**. A coroutine is considered *terminated* when it does not emit I/O requests anymore.
+
+*See available coroutines at [./src/coroutines](https://github.com/pimalaya/io-addressbook/tree/master/src/coroutines).*
+
+### Runtime
+
+A runtime contains all the I/O logic, and is responsible for **processing I/O requests** emitted by coroutines.
+
+*See available runtimes at [io-fs](https://github.com/pimalaya/io-fs/tree/master/src/runtimes) and [io-stream](https://github.com/pimalaya/io-stream/tree/master/src/runtimes).*
+
+### Loop
+
+The loop is the glue between coroutines and runtimes. It makes the coroutine progress while allowing runtime to process I/O.
+
+## Examples
+
+*See complete examples at [./examples](https://github.com/pimalaya/io-addressbook/blob/master/examples).*
+
+### TODO
+
+```rust,ignore
+// TODO
+```
+
+### More examples
+
+Have a look at projects built on the top of this library:
+
+- *TODO*
 
 ## Sponsoring
 

@@ -1,16 +1,54 @@
-[workspace]
-resolver = "2"
-members = [
-  "addressbook-carddav",
-  "addressbook-carddav-native-tls",
-  "addressbook-carddav-rustls",
-  "addressbook-lib",
-  "addressbook-vdir",
-]
+[package]
+name = "io-addressbook"
+description = "Set of I/O-free coroutines to manage contacts"
+version = "1.0.0"
+authors = ["soywod <clement.douin@posteo.net>"]
+edition = "2021"
+license = "MIT"
+categories = ["api-bindings"]
+keywords = ["io-free", "coroutine", "runtime", "addressbook", "vcard"]
+homepage = "https://pimalaya.org"
+documentation = "https://docs.rs/io-addressbook/latest/io_addressbook"
+repository = "https://github.com/pimalaya/io-addressbook"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["vdir"]
+carddav = ["dep:io-http", "dep:quick-xml", "dep:secrecy", "dep:thiserror"]
+vdir = ["dep:io-fs", "dep:io-vdir"]
+
+[dev-dependencies]
+env_logger = "0.11"
+memchr = "2.7"
+rustls = "0.23"
+rustls-platform-verifier = "0.5"
+tokio = { version = "1", features = ["full"] }
+url = "2.5"
+uuid = { version = "1", features = ["v4"] }
+
+[dependencies]
+base64 = { version = "0.22", optional = true }
+calcard = "0.1"
+chrono = { version = "0.4", optional = true }
+io-fs = { version = "1", default-features = false, optional = true }
+io-http = { version = "1", default-features = false, optional = true }
+io-vdir = { version = "1", default-features = false, optional = true }
+log = "0.4"
+quick-xml = { version = "0.37", features = ["serialize"], optional = true }
+secrecy = { version = "0.10", optional = true }
+serde = { version = "1", features = ["derive"] }
+thiserror = { version = "2", optional = true }
+uuid = { version = "1", features = ["v4"] }
 
 [patch.crates-io]
-addressbook-carddav-native-tls.path = "./addressbook-carddav-native-tls"
-addressbook-carddav-rustls.path = "./addressbook-carddav-rustls"
-addressbook-carddav.path = "./addressbook-carddav"
-addressbook-vdir.path = "./addressbook-vdir"
-addressbook.path = "./addressbook-lib"
+# io-fs.git = "https://github.com/pimalaya/io-fs"
+# io-http.git = "https://github.com/pimalaya/io-http"
+# io-stream.git = "https://github.com/pimalaya/io-stream"
+# io-vdir.git = "https://github.com/pimalaya/io-vdir"
+io-fs.path = "../fs"
+io-http.path = "../http"
+io-stream.path = "../stream"
+io-vdir.path = "../vdir"
