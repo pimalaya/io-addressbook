@@ -1,27 +1,22 @@
-use std::{
-    hash::{Hash, Hasher},
-    path::PathBuf,
-};
+use std::hash::{Hash, Hasher};
 
 use calcard::vcard::{VCard, VCardEntry};
-use io_vdir::constants::VCF;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Card {
-    pub addressbook_path: PathBuf,
-    pub name: String,
+    pub id: String,
+    pub addressbook_id: String,
     pub vcard: VCard,
 }
 
 impl Card {
-    pub fn path(&self) -> PathBuf {
-        self.addressbook_path
-            .join(&self.name)
-            .with_extension(self.extension())
-    }
-
-    pub fn extension(&self) -> &'static str {
-        VCF
+    pub fn new(addressbook_id: impl ToString, vcard: VCard) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            addressbook_id: addressbook_id.to_string(),
+            vcard,
+        }
     }
 
     pub fn entries(&self) -> impl Iterator<Item = &VCardEntry> {
@@ -31,6 +26,13 @@ impl Card {
 
 impl Hash for Card {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.path().hash(state);
+        self.id.hash(state);
+        self.addressbook_id.hash(state);
+    }
+}
+
+impl ToString for Card {
+    fn to_string(&self) -> String {
+        self.vcard.to_string()
     }
 }

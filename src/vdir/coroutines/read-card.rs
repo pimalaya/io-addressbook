@@ -1,78 +1,53 @@
-use std::path::PathBuf;
+use std::path::Path;
 
-use log::{debug, instrument, trace};
+use io_fs::Io;
+use io_vdir::{constants::VCF, coroutines::ReadItem, ItemKind};
 
-use crate::{
-    vdir::{
-        fs::{self, IoState},
-        Config, VCF,
-    },
-    Card,
-};
+use crate::Card;
 
 #[derive(Debug)]
-pub struct ReadCard {
-    state: fs::State,
-    card_id: String,
-    card_path: PathBuf,
-    done: bool,
-}
+pub struct ReadCard(ReadItem);
 
 impl ReadCard {
-    pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> Self {
-        let card_id = card_id.to_string();
-        let card_path = config
-            .home_dir
+    pub fn new(
+        root: impl AsRef<Path>,
+        addressbook_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+    ) -> Self {
+        let path = root
+            .as_ref()
             .join(addressbook_id.as_ref())
-            .join(&card_id)
+            .join(id.as_ref())
             .with_extension(VCF);
 
-        Self {
-            state: fs::State::default(),
-            card_id,
-            card_path,
-            done: false,
-        }
+        Self(ReadItem::new(path))
     }
 
-    #[instrument(skip_all)]
-    pub fn output(self) -> Option<Card> {
-        if !self.done {
-            debug!("invalid step to get output");
-            return None;
+    pub fn resume(&mut self, input: Option<Io>) -> Result<Card, Io> {
+        let item = self.0.resume(input)?;
+
+        let Some(parent) = item.path.parent() else {
+            return Err(Io::error("invalid item addressbook path"));
         };
 
-        let IoState::Done(files) = self.state.read_files else {
-            debug!(state = ?self.state, "invalid state to get output");
-            return None;
+        let Some(addressbook_id) = parent.file_stem() else {
+            return Err(Io::error("invalid item addressbook id"));
         };
 
-        let (_, content) = files.into_iter().next()?;
-        let content = String::from_utf8(content).ok()?;
-        Card::parse(self.card_id, content)
-    }
-}
+        let Some(id) = item.path.file_stem() else {
+            return Err(Io::error("invalid item id"));
+        };
 
-impl AsMut<fs::State> for ReadCard {
-    fn as_mut(&mut self) -> &mut fs::State {
-        &mut self.state
-    }
-}
+        let ItemKind::Vcard(vcard) = item.kind else {
+            return Err(Io::error("invalid vcard"));
+        };
 
-impl Iterator for ReadCard {
-    type Item = fs::Io;
+        let card = Card {
+            id: id.to_string_lossy().to_string(),
+            addressbook_id: addressbook_id.to_string_lossy().to_string(),
+            vcard,
+        };
 
-    #[instrument(skip_all)]
-    fn next(&mut self) -> Option<Self::Item> {
-        trace!(done = ?self.done, state = ?self.state);
-
-        if self.done {
-            None
-        } else {
-            let paths = vec![self.card_path.clone()];
-            self.state.read_files = IoState::Pending(paths);
-            self.done = true;
-            Some(fs::Io::ReadFiles)
-        }
+        Ok(card)
     }
 }

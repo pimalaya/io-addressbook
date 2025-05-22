@@ -1,24 +1,24 @@
 use std::path::Path;
 
-use io_fs::{coroutines::CreateFile, Io};
-use io_vdir::ItemKind;
+use io_fs::Io;
+use io_vdir::{constants::VCF, coroutines::CreateItem, Item, ItemKind};
 use log::debug;
 
+use crate::Card;
+
 #[derive(Debug)]
-pub struct CreateCard(CreateFile);
+pub struct CreateCard(CreateItem);
 
 impl CreateCard {
-    pub fn new(
-        collection_path: impl AsRef<Path>,
-        name: impl AsRef<str>,
-        contents: impl IntoIterator<Item = u8>,
-    ) -> Self {
-        let path = collection_path
+    pub fn new(root: impl AsRef<Path>, card: Card) -> Self {
+        let kind = ItemKind::Vcard(card.vcard);
+        let path = root
             .as_ref()
-            .join(name.as_ref())
-            .with_extension(ItemKind::Vcard.as_extension());
+            .join(card.addressbook_id)
+            .join(card.id)
+            .with_extension(VCF);
 
-        Self(CreateFile::new(path, contents))
+        Self(CreateItem::new(Item { path, kind }))
     }
 
     pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {

@@ -1,26 +1,27 @@
 use std::path::Path;
 
-use io_fs::{coroutines::RemoveFile, Io};
-use log::debug;
+use io_fs::Io;
+use io_vdir::{constants::VCF, coroutines::DeleteItem};
 
 #[derive(Debug)]
-pub struct DeleteCard(RemoveFile);
+pub struct DeleteCard(DeleteItem);
 
 impl DeleteCard {
-    pub fn new(card: impl AsRef<Path>) -> Self {
-        Self(RemoveFile::new(card.as_ref()))
+    pub fn new(
+        root: impl AsRef<Path>,
+        addressbook_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+    ) -> Self {
+        let path = root
+            .as_ref()
+            .join(addressbook_id.as_ref())
+            .join(id.as_ref())
+            .with_extension(VCF);
+
+        Self(DeleteItem::new(path))
     }
 
-    pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {
-        match self.0.resume(io) {
-            Ok(()) => {
-                debug!("resume after deleting vcf file");
-                Ok(())
-            }
-            Err(io) => {
-                debug!("break: need I/O to delete vcf file");
-                Err(io)
-            }
-        }
+    pub fn resume(&mut self, input: Option<Io>) -> Result<(), Io> {
+        self.0.resume(input)
     }
 }

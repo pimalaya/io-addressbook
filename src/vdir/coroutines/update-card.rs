@@ -1,10 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use io_fs::{
-    coroutines::{CreateFile, Rename},
-    Io,
-};
-use io_vdir::coroutines::UpdateItem;
+use io_fs::Io;
+use io_vdir::{constants::VCF, coroutines::UpdateItem, Item, ItemKind};
 use log::debug;
 
 use crate::Card;
@@ -13,23 +10,21 @@ use crate::Card;
 pub struct UpdateCard(UpdateItem);
 
 impl UpdateCard {
-    pub fn new(card: &Card, contents: impl IntoIterator<Item = u8>) -> Self {
-        let path: &Path = card.as_ref();
-        let path_tmp = path.with_extension(format!("{}.tmp", card.extension()));
-        let flow = CreateFile::new(&path_tmp, contents);
-        let state = State::CreateTemporaryCard(flow);
+    pub fn new(root: impl AsRef<Path>, card: Card) -> Self {
+        let kind = ItemKind::Vcard(card.vcard);
+        let path = root
+            .as_ref()
+            .join(card.addressbook_id)
+            .join(card.id)
+            .with_extension(VCF);
 
-        Self {
-            path,
-            path_tmp,
-            state,
-        }
+        Self(UpdateItem::new(Item { path, kind }))
     }
 
     pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {
         match self.0.resume(io) {
             Ok(()) => {
-                debug!("resume after updating vcf file");
+                debug!("resume after creating vcf file");
                 Ok(())
             }
             Err(io) => {
