@@ -1,10 +1,7 @@
-pub mod http;
-pub mod tcp;
-
-mod client;
-pub(crate) mod config;
-mod flow;
-pub(crate) mod response;
+pub mod config;
+pub mod coroutines;
+mod request;
+pub mod response;
 
 #[doc(inline)]
-pub use self::{client::Client, config::Config, flow::*};
+pub use self::{config::Config, request::Request};

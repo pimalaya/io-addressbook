@@ -1,9 +1,10 @@
-use secrecy::{ExposeSecret, SecretString};
+use http::Version;
+use secrecy::SecretString;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Config {
     /// The CardDAV server hostname.
-    pub hostname: String,
+    pub host: String,
 
     /// The CardDAV server host port.
     pub port: u16,
@@ -12,9 +13,7 @@ pub struct Config {
 
     /// The HTTP version to use when communicating with the CardDAV
     /// server.
-    ///
-    /// Supported versions: 1.0, 1.1
-    pub http_version: HttpVersion,
+    pub http_version: Version,
 
     /// The CardDAV server authentication configuration.
     ///
@@ -26,27 +25,11 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            hostname: String::from("localhost"),
+            host: String::from("127.0.0.1"),
             port: 8001,
             home_uri: String::from("/"),
-            http_version: HttpVersion::default(),
+            http_version: Version::default(),
             authentication: Authentication::default(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub enum HttpVersion {
-    V1_0,
-    #[default]
-    V1_1,
-}
-
-impl AsRef<str> for HttpVersion {
-    fn as_ref(&self) -> &str {
-        match self {
-            Self::V1_0 => "1.0",
-            Self::V1_1 => "1.1",
         }
     }
 }
@@ -56,18 +39,4 @@ pub enum Authentication {
     #[default]
     None,
     Basic(String, SecretString),
-}
-
-impl Eq for Authentication {}
-
-impl PartialEq for Authentication {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::None, Self::None) => true,
-            (Self::Basic(user1, pass1), Self::Basic(user2, pass2)) => {
-                user1 == user2 && pass1.expose_secret() == pass2.expose_secret()
-            }
-            _ => false,
-        }
-    }
 }
