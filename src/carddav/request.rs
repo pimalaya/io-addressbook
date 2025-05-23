@@ -1,6 +1,6 @@
 use base64::{prelude::BASE64_STANDARD, Engine};
 use http::{
-    header::{AUTHORIZATION, CONNECTION, CONTENT_TYPE, HOST},
+    header::{AUTHORIZATION, CONTENT_TYPE, HOST},
     Method, Version,
 };
 use secrecy::{ExposeSecret, SecretString};
@@ -66,11 +66,6 @@ impl Request {
 
     pub fn depth(mut self, depth: usize) -> Self {
         self.builder = self.builder.header("Depth", depth);
-        self
-    }
-
-    pub fn connection_keep_alive(mut self) -> Self {
-        self.builder = self.builder.header(CONNECTION, "keep-alive");
         self
     }
 

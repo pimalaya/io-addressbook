@@ -20,6 +20,7 @@ mod list_cards;
 // mod update_addressbook;
 // #[path = "update-card.rs"]
 // mod update_card;
+mod send;
 
 #[doc(inline)]
 pub use self::{
@@ -34,4 +35,5 @@ pub use self::{
     // read_card::ReadCard,
     // update_addressbook::UpdateAddressbook,
     // update_card::UpdateCard,
+    send::Send,
 };

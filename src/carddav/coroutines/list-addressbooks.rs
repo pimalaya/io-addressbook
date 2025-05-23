@@ -1,53 +1,29 @@
 use std::collections::HashSet;
 
-use io_http::v1_1::coroutines::Send;
 use io_stream::Io;
 use log::{debug, trace};
 use serde::Deserialize;
 
 use crate::{
-    carddav::{config::Authentication, response::Multistatus, Config, Request},
+    carddav::{response::Multistatus, Config, Request},
     Addressbook,
 };
 
+use super::Send;
+
 #[derive(Debug)]
-pub struct ListAddressbooks(Send);
+pub struct ListAddressbooks(Send<Multistatus<Prop>>);
 
 impl ListAddressbooks {
     const BODY: &'static str = include_str!("./list-addressbooks.xml");
 
     pub fn new(config: &Config) -> Self {
-        let mut request = Request::propfind(&config.home_uri, config.http_version)
-            .content_type_xml()
-            .host(&config.host, config.port)
-            .connection_keep_alive()
-            .depth(1);
-
-        if let Authentication::Basic(user, pass) = &config.authentication {
-            request = request.basic_auth(user, pass);
-        };
-
-        let body = Self::BODY.as_bytes().to_vec();
-
-        Self(Send::new(request.body(body)))
+        let request = Request::propfind(&config.home_uri, config.http_version).depth(1);
+        Self(Send::new(config, request, Self::BODY.as_bytes()))
     }
 
     pub fn resume(&mut self, input: Option<Io>) -> Result<HashSet<Addressbook>, Io> {
-        let response = self.0.resume(input)?;
-        let body = String::from_utf8_lossy(response.body());
-
-        if !response.status().is_success() {
-            let err = format!("HTTP {}: {body}", response.status());
-            return Err(Io::err(err));
-        }
-
-        let body: Response = match quick_xml::de::from_str(&body) {
-            Ok(xml) => xml,
-            Err(err) => {
-                let err = format!("HTTP response error: XML body parsing error: {err}");
-                return Err(Io::err(err));
-            }
-        };
+        let body = self.0.resume(input)?;
 
         let mut addressbooks = HashSet::new();
 
@@ -128,8 +104,6 @@ impl ListAddressbooks {
         Ok(addressbooks)
     }
 }
-
-pub type Response = Multistatus<Prop>;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
