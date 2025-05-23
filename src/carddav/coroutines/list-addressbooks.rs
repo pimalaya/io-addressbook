@@ -1,53 +1,66 @@
+use std::collections::HashSet;
+
+use io_http::v1_1::coroutines::Send;
+use io_stream::Io;
 use log::{debug, trace};
 use serde::Deserialize;
 
 use crate::{
-    carddav::{
-        config::Authentication,
-        http::{Request, SendHttpRequest},
-        response::Multistatus,
-        tcp, Config,
-    },
-    Addressbook, Addressbooks,
+    carddav::{config::Authentication, response::Multistatus, Config, Request},
+    Addressbook,
 };
 
 #[derive(Debug)]
-pub struct ListAddressbooks {
-    http: SendHttpRequest,
-}
+pub struct ListAddressbooks(Send);
 
 impl ListAddressbooks {
     const BODY: &'static str = include_str!("./list-addressbooks.xml");
 
     pub fn new(config: &Config) -> Self {
-        let mut request = Request::propfind(&config.home_uri, config.http_version.as_ref())
+        let mut request = Request::propfind(&config.home_uri, config.http_version)
             .content_type_xml()
-            .depth("1");
+            .host(&config.host, config.port)
+            .connection_keep_alive()
+            .depth(1);
 
         if let Authentication::Basic(user, pass) = &config.authentication {
             request = request.basic_auth(user, pass);
         };
 
-        Self {
-            http: SendHttpRequest::new(request.body(Self::BODY)),
-        }
+        let body = Self::BODY.as_bytes().to_vec();
+
+        Self(Send::new(request.body(body)))
     }
 
-    pub fn output(self) -> Result<Addressbooks, quick_xml::de::DeError> {
-        let body = self.http.take_body();
-        let response: Response = quick_xml::de::from_reader(body.as_slice())?;
-        let mut addressbooks = Addressbooks::default();
+    pub fn resume(&mut self, input: Option<Io>) -> Result<HashSet<Addressbook>, Io> {
+        let response = self.0.resume(input)?;
+        let body = String::from_utf8_lossy(response.body());
 
-        let Some(responses) = response.responses else {
+        if !response.status().is_success() {
+            let err = format!("HTTP {}: {body}", response.status());
+            return Err(Io::err(err));
+        }
+
+        let body: Response = match quick_xml::de::from_str(&body) {
+            Ok(xml) => xml,
+            Err(err) => {
+                let err = format!("HTTP response error: XML body parsing error: {err}");
+                return Err(Io::err(err));
+            }
+        };
+
+        let mut addressbooks = HashSet::new();
+
+        let Some(responses) = body.responses else {
             return Ok(addressbooks);
         };
 
         for response in responses {
-            trace!(?response, "process multistatus");
+            trace!("process multistatus");
 
             if let Some(status) = response.status {
                 if !status.is_success() {
-                    debug!(?status, "multistatus response error");
+                    debug!("multistatus response error");
                     continue;
                 }
             };
@@ -57,15 +70,20 @@ impl ListAddressbooks {
             };
 
             let mut is_addressbook = None;
-            let mut addressbook = Addressbook::default();
-            addressbook.id = response
-                .href
-                .value
-                .trim_end_matches('/')
-                .rsplit('/')
-                .next()
-                .unwrap() // SAFETY: addressbooks belong to principal
-                .to_owned();
+
+            let mut addressbook = Addressbook {
+                id: response
+                    .href
+                    .value
+                    .trim_end_matches('/')
+                    .rsplit('/')
+                    .next()
+                    .unwrap() // SAFETY: addressbooks belong to principal
+                    .to_owned(),
+                display_name: None,
+                description: None,
+                color: None,
+            };
 
             for propstat in propstats {
                 if let Some(false) = is_addressbook {
@@ -73,7 +91,7 @@ impl ListAddressbooks {
                 }
 
                 if !propstat.status.is_success() {
-                    debug!(?propstat, "multistatus propstat response error");
+                    debug!("multistatus propstat response error");
                     continue;
                 }
 
@@ -84,20 +102,26 @@ impl ListAddressbooks {
                 }
 
                 if let Some(name) = propstat.prop.displayname {
-                    addressbook.name = name
+                    if !name.trim().is_empty() {
+                        addressbook.display_name = Some(name);
+                    }
                 }
 
                 if let Some(desc) = propstat.prop.addressbook_description {
-                    addressbook.desc = Some(desc);
+                    if !desc.trim().is_empty() {
+                        addressbook.description = Some(desc);
+                    }
                 }
 
                 if let Some(color) = propstat.prop.addressbook_color {
-                    addressbook.color = Some(color);
+                    if !color.trim().is_empty() {
+                        addressbook.color = Some(color);
+                    }
                 }
             }
 
             if let Some(true) = is_addressbook {
-                addressbooks.push(addressbook);
+                addressbooks.insert(addressbook);
             }
         }
 
@@ -119,18 +143,4 @@ pub struct Prop {
 #[derive(Clone, Debug, Deserialize)]
 pub struct ResourceType {
     pub addressbook: Option<()>,
-}
-
-impl AsMut<tcp::State> for ListAddressbooks {
-    fn as_mut(&mut self) -> &mut tcp::State {
-        self.http.as_mut()
-    }
-}
-
-impl Iterator for ListAddressbooks {
-    type Item = tcp::Io;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.http.next()
-    }
 }

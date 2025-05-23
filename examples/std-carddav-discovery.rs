@@ -8,7 +8,7 @@ use std::{
 use http::Version;
 use io_addressbook::carddav::{
     config::Authentication,
-    coroutines::{AddressbookHomeSet, CurrentUserPrincipal},
+    coroutines::{AddressbookHomeSet, CurrentUserPrincipal, ListAddressbooks, ListCards},
     Config,
 };
 use io_stream::{runtimes::std::handle, Io};
@@ -53,7 +53,7 @@ fn main() {
     println!("connect to {host}:{port}");
     let mut stream = connect(&host, port, &scheme);
 
-    let config = Config {
+    let mut config = Config {
         host,
         port,
         http_version,
@@ -64,7 +64,7 @@ fn main() {
     let mut arg = None;
     let mut http = CurrentUserPrincipal::new(&config, &config.home_uri);
 
-    let current_user_principal = loop {
+    config.home_uri = loop {
         match http.resume(arg.take()) {
             Ok(None) => break config.home_uri.clone(),
             Ok(Some(path)) => break path,
@@ -73,21 +73,47 @@ fn main() {
         }
     };
 
-    println!("current user principal: {current_user_principal:?}");
+    println!("current user principal: {:?}", config.home_uri);
 
     let mut arg = None;
-    let mut http = AddressbookHomeSet::new(&config, &current_user_principal);
+    let mut http = AddressbookHomeSet::new(&config, &config.home_uri);
 
-    let addressbook_home_set = loop {
+    config.home_uri = loop {
         match http.resume(arg.take()) {
-            Ok(None) => break current_user_principal,
+            Ok(None) => break config.home_uri.clone(),
             Ok(Some(path)) => break path,
             Err(Io::Error(err)) => panic!("{err}"),
             Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
-    println!("addressbook home set: {addressbook_home_set:?}");
+    println!("addressbook home set: {:?}", config.home_uri);
+
+    let mut arg = None;
+    let mut http = ListAddressbooks::new(&config);
+
+    let addressbooks = loop {
+        match http.resume(arg.take()) {
+            Ok(addressbooks) => break addressbooks,
+            Err(Io::Error(err)) => panic!("{err}"),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
+        }
+    };
+
+    println!("addressbooks: {addressbooks:#?}");
+
+    let mut arg = None;
+    let mut http = ListCards::new(&config, addressbooks.into_iter().next().unwrap().id);
+
+    let cards = loop {
+        match http.resume(arg.take()) {
+            Ok(cards) => break cards,
+            Err(Io::Error(err)) => panic!("{err}"),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
+        }
+    };
+
+    println!("cards: {cards:#?}");
 }
 
 fn prompt(message: &str) -> String {

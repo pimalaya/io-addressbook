@@ -10,10 +10,10 @@ mod current_user_principal;
 // mod delete_addressbook;
 // #[path = "delete-card.rs"]
 // mod delete_card;
-// #[path = "list-addressbooks.rs"]
-// mod list_addressbooks;
-// #[path = "list-cards.rs"]
-// mod list_cards;
+#[path = "list-addressbooks.rs"]
+mod list_addressbooks;
+#[path = "list-cards.rs"]
+mod list_cards;
 // #[path = "read-card.rs"]
 // mod read_card;
 // #[path = "update-addressbook.rs"]
@@ -29,8 +29,8 @@ pub use self::{
     current_user_principal::CurrentUserPrincipal,
     // delete_addressbook::DeleteAddressbook,
     // delete_card::DeleteCard,
-    // list_addressbooks::ListAddressbooks,
-    // list_cards::ListCards,
+    list_addressbooks::ListAddressbooks,
+    list_cards::ListCards,
     // read_card::ReadCard,
     // update_addressbook::UpdateAddressbook,
     // update_card::UpdateCard,

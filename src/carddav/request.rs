@@ -64,8 +64,8 @@ impl Request {
         self
     }
 
-    pub fn depth(mut self, value: &str) -> Self {
-        self.builder = self.builder.header("Depth", value);
+    pub fn depth(mut self, depth: usize) -> Self {
+        self.builder = self.builder.header("Depth", depth);
         self
     }
 
