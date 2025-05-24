@@ -20,8 +20,8 @@ impl AddressbookHomeSet {
         Self(Send::new(config, request, Self::BODY.as_bytes()))
     }
 
-    pub fn resume(&mut self, input: Option<Io>) -> Result<Option<String>, Io> {
-        let body = self.0.resume(input)?;
+    pub fn resume(&mut self, arg: Option<Io>) -> Result<Option<String>, Io> {
+        let body = self.0.resume(arg)?;
 
         let Some(responses) = body.responses else {
             return Ok(None);

@@ -1,67 +1,55 @@
-use std::string::FromUtf8Error;
-
-use thiserror::Error;
+use calcard::vcard::VCard;
+use io_http::v1_1::coroutines::Send;
+use io_stream::Io;
+use io_vdir::constants::VCF;
 
 use crate::{
-    carddav::{
-        config::Authentication,
-        http::{Request, SendHttpRequest},
-        tcp, Config,
-    },
+    carddav::{config::Authentication, Config, Request},
     Card,
 };
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error(transparent)]
-    DecodeUtf8Error(#[from] FromUtf8Error),
-    #[error("cannot parse vCard")]
-    ParseError,
-}
-
 #[derive(Debug)]
 pub struct ReadCard {
-    id: String,
-    http: SendHttpRequest,
+    addressbook_id: Option<String>,
+    id: Option<String>,
+    send: Send,
 }
 
 impl ReadCard {
     const BODY: &'static str = "";
 
-    pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl ToString) -> Self {
-        let addressbook_id = addressbook_id.as_ref();
+    pub fn new(config: &Config, addressbook_id: impl ToString, card_id: impl ToString) -> Self {
+        let addressbook_id = addressbook_id.to_string();
         let card_id = card_id.to_string();
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.vcf");
+        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.{VCF}");
 
-        let mut request = Request::get(uri.as_ref(), config.http_version.as_ref());
+        let mut request =
+            Request::get(uri.as_ref(), config.http_version).host(&config.host, config.port);
 
         if let Authentication::Basic(user, pass) = &config.authentication {
             request = request.basic_auth(user, pass);
         };
 
+        let send = Send::new(request.body(Self::BODY.as_bytes().to_vec()));
+
         Self {
-            id: card_id,
-            http: SendHttpRequest::new(request.body(Self::BODY)),
+            id: Some(card_id),
+            addressbook_id: Some(addressbook_id),
+            send,
         }
     }
 
-    pub fn output(self) -> Result<Card, Error> {
-        let content = String::from_utf8(self.http.take_body())?;
-        Card::parse(self.id, content).ok_or(Error::ParseError)
-    }
-}
+    pub fn resume(&mut self, input: Option<Io>) -> Result<Card, Io> {
+        let response = self.send.resume(input)?;
+        let content = String::from_utf8(response.into_body()).unwrap();
+        let vcard = VCard::parse(content).unwrap();
+        let card = Card {
+            id: self.id.take().unwrap(),
+            addressbook_id: self.addressbook_id.take().unwrap(),
+            vcard,
+        };
 
-impl AsMut<tcp::State> for ReadCard {
-    fn as_mut(&mut self) -> &mut tcp::State {
-        self.http.as_mut()
-    }
-}
-
-impl Iterator for ReadCard {
-    type Item = tcp::Io;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.http.next()
+        Ok(card)
     }
 }

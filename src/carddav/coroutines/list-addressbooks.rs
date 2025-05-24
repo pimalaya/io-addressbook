@@ -22,8 +22,8 @@ impl ListAddressbooks {
         Self(Send::new(config, request, Self::BODY.as_bytes()))
     }
 
-    pub fn resume(&mut self, input: Option<Io>) -> Result<HashSet<Addressbook>, Io> {
-        let body = self.0.resume(input)?;
+    pub fn resume(&mut self, arg: Option<Io>) -> Result<HashSet<Addressbook>, Io> {
+        let body = self.0.resume(arg)?;
 
         let mut addressbooks = HashSet::new();
 

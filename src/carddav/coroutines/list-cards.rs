@@ -39,8 +39,8 @@ impl ListCards {
         }
     }
 
-    pub fn resume(&mut self, input: Option<Io>) -> Result<HashSet<Card>, Io> {
-        let body = self.send.resume(input)?;
+    pub fn resume(&mut self, arg: Option<Io>) -> Result<HashSet<Card>, Io> {
+        let body = self.send.resume(arg)?;
 
         let mut cards = HashSet::new();
 

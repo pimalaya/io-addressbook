@@ -1,46 +1,33 @@
-use crate::carddav::{
-    config::Authentication,
-    http::{Request, SendHttpRequest},
-    tcp, Config,
-};
+use io_stream::Io;
+use io_vdir::constants::VCF;
+use serde::Deserialize;
+
+use crate::carddav::{response::StatusResponse, Config, Request};
+
+use super::Send;
 
 #[derive(Debug)]
-pub struct DeleteCard {
-    http: SendHttpRequest,
-}
+pub struct DeleteCard(Send<Response>);
 
 impl DeleteCard {
     const BODY: &'static str = "";
 
     pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card_id: impl AsRef<str>) -> Self {
+        let addressbook_id = addressbook_id.as_ref();
+        let card_id = card_id.as_ref();
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!(
-            "{base_uri}/{}/{}.vcf",
-            addressbook_id.as_ref(),
-            card_id.as_ref()
-        );
-        let mut request = Request::delete(uri.as_ref(), config.http_version.as_ref());
+        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.{VCF}");
+        let request = Request::delete(uri, config.http_version).content_type_xml();
+        Self(Send::new(config, request, Self::BODY.as_bytes()))
+    }
 
-        if let Authentication::Basic(user, pass) = &config.authentication {
-            request = request.basic_auth(user, pass);
-        };
-
-        Self {
-            http: SendHttpRequest::new(request.body(Self::BODY)),
-        }
+    pub fn resume(&mut self, arg: Option<Io>) -> Result<bool, Io> {
+        let body = self.0.resume(arg)?;
+        Ok(body.response.status.is_success())
     }
 }
 
-impl AsMut<tcp::State> for DeleteCard {
-    fn as_mut(&mut self) -> &mut tcp::State {
-        self.http.as_mut()
-    }
-}
-
-impl Iterator for DeleteCard {
-    type Item = tcp::Io;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.http.next()
-    }
+#[derive(Clone, Debug, Deserialize)]
+pub struct Response {
+    pub response: StatusResponse,
 }
