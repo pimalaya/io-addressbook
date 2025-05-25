@@ -13,10 +13,9 @@ use super::Send;
 pub struct CreateCard(Send<()>);
 
 impl CreateCard {
-    pub fn new(config: &Config, addressbook_id: impl AsRef<str>, card: Card) -> Self {
-        let addressbook_id = addressbook_id.as_ref();
+    pub fn new(config: &Config, card: Card) -> Self {
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{addressbook_id}/{}.{}", card.id, VCF);
+        let uri = &format!("{base_uri}/{}/{}.{VCF}", card.addressbook_id, card.id);
         let request = Request::put(uri, config.http_version).content_type_vcard();
 
         Self(Send::new(config, request, &[]))

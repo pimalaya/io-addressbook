@@ -1,24 +1,35 @@
-use std::{collections::HashSet, io::ErrorKind};
+use std::{collections::HashSet, io::ErrorKind, net::TcpStream};
 
 use calcard::vcard::VCard;
-use io_addressbook::{vdir::coroutines::*, Addressbook, Card};
-use io_fs::runtimes::std::handle;
-use tempdir::TempDir;
+use http::Version;
+use io_addressbook::{
+    carddav::{config::Authentication, coroutines::*, Config},
+    Addressbook, Card,
+};
+use io_stream::runtimes::std::handle;
 
 #[test]
-fn std_vdir() {
-    let workdir = TempDir::new("test-vdir-std").unwrap();
-    let root = workdir.path();
+fn std_carddav() {
+    env_logger::init();
+
+    let config = Config {
+        host: "127.0.0.1".into(),
+        port: 8001,
+        http_version: Version::HTTP_11,
+        home_uri: "/user".into(),
+        authentication: Authentication::Basic("user".into(), "".into()),
+    };
 
     // should list empty addressbooks
 
     let mut arg = None;
-    let mut list = ListAddressbooks::new(&root);
+    let mut list = ListAddressbooks::new(&config);
+    let mut stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let addressbooks = loop {
         match list.resume(arg) {
             Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
@@ -29,19 +40,20 @@ fn std_vdir() {
     let mut addressbook = Addressbook::new();
 
     let mut arg = None;
-    let mut create = CreateAddressbook::new(root, addressbook.clone());
+    let mut create = CreateAddressbook::new(&config, addressbook.clone());
+    let mut stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = create.resume(arg) {
-        arg = Some(handle(io).unwrap());
+        arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListAddressbooks::new(&root);
+    let mut list = ListAddressbooks::new(&&config);
 
     let addressbooks = loop {
         match list.resume(arg) {
             Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
@@ -52,12 +64,12 @@ fn std_vdir() {
     // should not re-create existing addressbook
 
     let mut arg = None;
-    let mut create = CreateAddressbook::new(root, addressbook.clone());
+    let mut create = CreateAddressbook::new(&config, addressbook.clone());
 
     loop {
         match create.resume(arg) {
             Ok(()) => unreachable!("should not be OK"),
-            Err(io) => match handle(io) {
+            Err(io) => match handle(&mut stream, io) {
                 Ok(output) => arg = Some(output),
                 Err(err) => break assert_eq!(err.kind(), ErrorKind::AlreadyExists),
             },
@@ -71,19 +83,19 @@ fn std_vdir() {
     addressbook.color = Some("#000000".into());
 
     let mut arg = None;
-    let mut update = UpdateAddressbook::new(root, addressbook.clone());
+    let mut update = UpdateAddressbook::new(&config, addressbook.clone());
 
     while let Err(io) = update.resume(arg) {
-        arg = Some(handle(io).unwrap());
+        arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListAddressbooks::new(&root);
+    let mut list = ListAddressbooks::new(&&config);
 
     let cards = loop {
         match list.resume(arg) {
             Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
@@ -99,19 +111,19 @@ fn std_vdir() {
     );
 
     let mut arg = None;
-    let mut create = CreateCard::new(root, card.clone());
+    let mut create = CreateCard::new(&config, card.clone());
 
     while let Err(io) = create.resume(arg) {
-        arg = Some(handle(io).unwrap());
+        arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListCards::new(root, &addressbook.id);
+    let mut list = ListCards::new(&config, &addressbook.id);
 
     let cards = loop {
         match list.resume(arg) {
             Ok(cards) => break cards,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
@@ -129,19 +141,19 @@ fn std_vdir() {
     card.vcard = VCard::parse("BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n").unwrap();
 
     let mut arg = None;
-    let mut update = UpdateCard::new(root, card);
+    let mut update = UpdateCard::new(&config, card);
 
     while let Err(io) = update.resume(arg) {
-        arg = Some(handle(io).unwrap());
+        arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListCards::new(root, &addressbook.id);
+    let mut list = ListCards::new(&config, &addressbook.id);
 
     let cards = loop {
         match list.resume(arg) {
             Ok(cards) => break cards,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
@@ -171,19 +183,19 @@ fn std_vdir() {
     // should delete card
 
     let mut arg = None;
-    let mut delete = DeleteCard::new(root, &addressbook.id, &card.id);
+    let mut delete = DeleteCard::new(&config, &addressbook.id, &card.id);
 
     while let Err(io) = delete.resume(arg) {
-        arg = Some(handle(io).unwrap());
+        arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListCards::new(root, &addressbook.id);
+    let mut list = ListCards::new(&config, &addressbook.id);
 
     let cards = loop {
         match list.resume(arg) {
             Ok(cards) => break cards,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
@@ -192,23 +204,21 @@ fn std_vdir() {
     // should delete addressbook
 
     let mut arg = None;
-    let mut delete = DeleteAddressbook::new(root, &addressbook.id);
+    let mut delete = DeleteAddressbook::new(&config, &addressbook.id);
 
     while let Err(io) = delete.resume(arg) {
-        arg = Some(handle(io).unwrap());
+        arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListAddressbooks::new(root);
+    let mut list = ListAddressbooks::new(&config);
 
     let addressbooks = loop {
         match list.resume(arg) {
             Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
+            Err(io) => arg = Some(handle(&mut stream, io).unwrap()),
         }
     };
 
     assert!(addressbooks.is_empty());
-
-    workdir.close().unwrap();
 }
