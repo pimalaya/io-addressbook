@@ -6,7 +6,7 @@
         <collection />
         <C:addressbook />
       </resourcetype>
-      <displayname>{}</displayname>
+      {}
       {}
       {}
     </prop>

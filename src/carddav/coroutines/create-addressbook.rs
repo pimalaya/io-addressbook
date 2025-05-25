@@ -1,16 +1,13 @@
+use io_http::v1_1::coroutines::Send;
 use io_stream::Io;
-use log::{debug, trace};
-use serde::Deserialize;
 
 use crate::{
-    carddav::{response::MkcolResponse, Config, Request},
+    carddav::{config::Authentication, Config, Request},
     Addressbook,
 };
 
-use super::Send;
-
 #[derive(Debug)]
-pub struct CreateAddressbook(Send<MkcolResponse<Prop>>);
+pub struct CreateAddressbook(Send);
 
 impl CreateAddressbook {
     pub fn new(config: &Config, mut addressbook: Addressbook) -> Self {
@@ -18,12 +15,7 @@ impl CreateAddressbook {
         let uri = &format!("{base_uri}/{}", addressbook.id);
 
         let name = match addressbook.display_name.take() {
-            Some(name) => name,
-            None => String::new(),
-        };
-
-        let color = match &addressbook.color.take() {
-            Some(color) => format!("<I:addressbook-color>{color}</I:addressbook-color>"),
+            Some(name) => format!("<displayname>{name}</displayname>"),
             None => String::new(),
         };
 
@@ -32,49 +24,34 @@ impl CreateAddressbook {
             None => String::new(),
         };
 
-        let request = Request::mkcol(uri, config.http_version).content_type_xml();
-        let body = format!(include_str!("./create-addressbook.xml"), name, color, desc);
+        let color = match &addressbook.color.take() {
+            Some(color) => format!("<I:addressbook-color>{color}</I:addressbook-color>"),
+            None => String::new(),
+        };
 
-        Self(Send::new(config, request, body.as_bytes()))
+        let mut request = Request::mkcol(uri, config.http_version)
+            .content_type_xml()
+            .host(&config.host, config.port);
+
+        if let Authentication::Basic(user, pass) = &config.authentication {
+            request = request.basic_auth(user, pass);
+        };
+
+        let body = format!(include_str!("./create-addressbook.xml"), name, color, desc);
+        let request = request.body(body.as_bytes().to_vec());
+
+        Self(Send::new(request))
     }
 
     pub fn resume(&mut self, arg: Option<Io>) -> Result<(), Io> {
-        let body = self.0.resume(arg)?;
+        let response = self.0.resume(arg)?;
+        let body = String::from_utf8_lossy(response.body());
 
-        let Some(propstats) = body.propstats else {
-            return Ok(());
-        };
-
-        for propstat in propstats {
-            if !propstat.status.is_success() {
-                debug!("mkcol propstat error");
-                continue;
-            }
-
-            match propstat.prop.displayname {
-                Some(name) => trace!("addressbook displayname successfully created: {name}"),
-                None => debug!("adressbook displayname could not be created"),
-            }
-
-            match propstat.prop.addressbook_description {
-                Some(desc) => trace!("addressbook description successfully created: {desc}"),
-                None => debug!("addressbook description could not be created"),
-            }
-
-            match propstat.prop.addressbook_color {
-                Some(color) => trace!("addressbook color successfully created: {color}"),
-                None => debug!("addressbook color could not be created"),
-            }
+        if !response.status().is_success() {
+            let err = format!("HTTP error: {}: {body}", response.status());
+            return Err(Io::err(err));
         }
 
         Ok(())
     }
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct Prop {
-    pub displayname: Option<String>,
-    pub addressbook_color: Option<String>,
-    pub addressbook_description: Option<String>,
 }

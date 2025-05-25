@@ -38,17 +38,19 @@ fn std_carddav() {
     // should create addressbook without metadata
 
     let mut addressbook = Addressbook::new();
+    addressbook.display_name = Some("name".into());
 
     let mut arg = None;
     let mut create = CreateAddressbook::new(&config, addressbook.clone());
-    let mut stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = create.resume(arg) {
         arg = Some(handle(&mut stream, io).unwrap());
     }
 
     let mut arg = None;
-    let mut list = ListAddressbooks::new(&&config);
+    let mut list = ListAddressbooks::new(&config);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let addressbooks = loop {
         match list.resume(arg) {
@@ -65,13 +67,14 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut create = CreateAddressbook::new(&config, addressbook.clone());
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     loop {
         match create.resume(arg) {
             Ok(()) => unreachable!("should not be OK"),
             Err(io) => match handle(&mut stream, io) {
                 Ok(output) => arg = Some(output),
-                Err(err) => break assert_eq!(err.kind(), ErrorKind::AlreadyExists),
+                Err(err) => break assert_eq!(err.kind(), ErrorKind::Other),
             },
         }
     }
@@ -84,6 +87,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut update = UpdateAddressbook::new(&config, addressbook.clone());
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = update.resume(arg) {
         arg = Some(handle(&mut stream, io).unwrap());
@@ -91,6 +95,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut list = ListAddressbooks::new(&&config);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let cards = loop {
         match list.resume(arg) {
@@ -105,13 +110,19 @@ fn std_carddav() {
 
     // should create card
 
-    let mut card = Card::new(
-        &addressbook.id,
-        VCard::parse("BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n").unwrap(),
+    let vcard = concat!(
+        "BEGIN:VCARD\r\n",
+        "VERSION: 4.0\r\n",
+        "UID: abc123\r\n",
+        "FN: test\r\n",
+        "END:VCARD\r\n"
     );
+
+    let mut card = Card::new(&addressbook.id, VCard::parse(vcard).unwrap());
 
     let mut arg = None;
     let mut create = CreateCard::new(&config, card.clone());
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = create.resume(arg) {
         arg = Some(handle(&mut stream, io).unwrap());
@@ -119,6 +130,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut list = ListCards::new(&config, &addressbook.id);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let cards = loop {
         match list.resume(arg) {
@@ -131,17 +143,23 @@ fn std_carddav() {
 
     let first_card = cards.into_iter().next().unwrap();
 
-    assert_eq!(
-        first_card.to_string(),
-        "BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n"
-    );
+    assert_eq!(first_card.to_string(), vcard);
 
     // should update card
 
-    card.vcard = VCard::parse("BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n").unwrap();
+    let vcard = concat!(
+        "BEGIN:VCARD\r\n",
+        "VERSION: 4.0\r\n",
+        "UID: abc123\r\n",
+        "FN: test updated\r\n",
+        "END:VCARD\r\n"
+    );
+
+    card.vcard = VCard::parse(vcard).unwrap();
 
     let mut arg = None;
     let mut update = UpdateCard::new(&config, card);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = update.resume(arg) {
         arg = Some(handle(&mut stream, io).unwrap());
@@ -149,6 +167,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut list = ListCards::new(&config, &addressbook.id);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let cards = loop {
         match list.resume(arg) {
@@ -161,10 +180,7 @@ fn std_carddav() {
 
     let card = cards.into_iter().next().unwrap();
 
-    assert_eq!(
-        card.to_string(),
-        "BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n"
-    );
+    assert_eq!(card.to_string(), vcard);
 
     // // should read card
 
@@ -184,6 +200,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut delete = DeleteCard::new(&config, &addressbook.id, &card.id);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = delete.resume(arg) {
         arg = Some(handle(&mut stream, io).unwrap());
@@ -191,6 +208,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut list = ListCards::new(&config, &addressbook.id);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let cards = loop {
         match list.resume(arg) {
@@ -205,6 +223,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut delete = DeleteAddressbook::new(&config, &addressbook.id);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     while let Err(io) = delete.resume(arg) {
         arg = Some(handle(&mut stream, io).unwrap());
@@ -212,6 +231,7 @@ fn std_carddav() {
 
     let mut arg = None;
     let mut list = ListAddressbooks::new(&config);
+    stream = TcpStream::connect((config.host.as_str(), config.port)).unwrap();
 
     let addressbooks = loop {
         match list.resume(arg) {
