@@ -2,7 +2,7 @@ use io_http::v1_1::coroutines::Send;
 use io_stream::Io;
 
 use crate::{
-    carddav::{config::Authentication, Config, Request},
+    carddav::{Config, Request},
     Addressbook,
 };
 
@@ -29,13 +29,10 @@ impl CreateAddressbook {
             None => String::new(),
         };
 
-        let mut request = Request::mkcol(uri, config.http_version)
+        let request = Request::mkcol(uri, config.http_version)
             .content_type_xml()
-            .host(&config.host, config.port);
-
-        if let Authentication::Basic(user, pass) = &config.authentication {
-            request = request.basic_auth(user, pass);
-        };
+            .host(&config.host, config.port)
+            .authorization(&config.auth);
 
         let body = format!(include_str!("./create-addressbook.xml"), name, color, desc);
         let request = request.body(body.as_bytes().to_vec());

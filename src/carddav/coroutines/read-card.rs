@@ -1,10 +1,9 @@
 use calcard::vcard::VCard;
 use io_http::v1_1::coroutines::Send;
 use io_stream::Io;
-use io_vdir::constants::VCF;
 
 use crate::{
-    carddav::{config::Authentication, Config, Request},
+    carddav::{Config, Request},
     Card,
 };
 
@@ -22,14 +21,11 @@ impl ReadCard {
         let addressbook_id = addressbook_id.to_string();
         let card_id = card_id.to_string();
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.{VCF}");
+        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.vcf");
 
-        let mut request =
-            Request::get(uri.as_ref(), config.http_version).host(&config.host, config.port);
-
-        if let Authentication::Basic(user, pass) = &config.authentication {
-            request = request.basic_auth(user, pass);
-        };
+        let request = Request::get(uri.as_ref(), config.http_version)
+            .host(&config.host, config.port)
+            .authorization(&config.auth);
 
         let send = Send::new(request.body(Self::BODY.as_bytes().to_vec()));
 

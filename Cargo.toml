@@ -1,7 +1,7 @@
 [package]
 name = "io-addressbook"
 description = "Set of I/O-free coroutines to manage contacts"
-version = "1.0.0"
+version = "0.0.1"
 authors = ["soywod <clement.douin@posteo.net>"]
 edition = "2021"
 license = "MIT"
@@ -22,8 +22,8 @@ vdir = ["dep:io-fs", "dep:io-vdir"]
 
 [dev-dependencies]
 env_logger = "0.11"
-io-fs = { version = "1", default-features = false, features = ["std"] }
-io-stream = { version = "1", default-features = false, features = ["std"] }
+io-fs = { version = "0.0.1", default-features = false, features = ["std"] }
+io-stream = { version = "0.0.1", default-features = false, features = ["std"] }
 rustls = "0.23"
 rustls-platform-verifier = "0.5"
 tempdir = "0.3"
@@ -35,10 +35,10 @@ base64 = { version = "0.22", optional = true }
 calcard = "0.1"
 chrono = { version = "0.4", optional = true }
 http = { version = "1.3", optional = true }
-io-fs = { version = "1", default-features = false, optional = true }
-io-http = { version = "1", default-features = false, optional = true }
-io-stream = { version = "1", default-features = false, optional = true }
-io-vdir = { version = "1", default-features = false, optional = true }
+io-fs = { version = "0.0.1", default-features = false, optional = true }
+io-http = { version = "0.0.1", default-features = false, optional = true }
+io-stream = { version = "0.0.1", default-features = false, optional = true }
+io-vdir = { version = "0.0.1", default-features = false, optional = true }
 log = "0.4"
 memchr = { version = "2.7", optional = true }
 quick-xml = { version = "0.37", features = ["serialize"], optional = true }

@@ -1,9 +1,8 @@
 use io_http::v1_1::coroutines::Send;
 use io_stream::Io;
-use io_vdir::constants::VCF;
 
 use crate::{
-    carddav::{config::Authentication, Config, Request},
+    carddav::{Config, Request},
     Card,
 };
 
@@ -13,14 +12,11 @@ pub struct CreateCard(Send);
 impl CreateCard {
     pub fn new(config: &Config, card: Card) -> Self {
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{}/{}.{VCF}", card.addressbook_id, card.id);
-        let mut request = Request::put(uri, config.http_version)
+        let uri = &format!("{base_uri}/{}/{}.vcf", card.addressbook_id, card.id);
+        let request = Request::put(uri, config.http_version)
             .content_type_vcard()
-            .host(&config.host, config.port);
-
-        if let Authentication::Basic(user, pass) = &config.authentication {
-            request = request.basic_auth(user, pass);
-        };
+            .host(&config.host, config.port)
+            .authorization(&config.auth);
 
         let request = request.body(card.to_string().into_bytes());
 

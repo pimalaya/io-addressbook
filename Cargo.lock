@@ -508,7 +508,7 @@ dependencies = [
 
 [[package]]
 name = "io-addressbook"
-version = "1.0.0"
+version = "0.0.1"
 dependencies = [
  "base64",
  "calcard",
@@ -534,14 +534,14 @@ dependencies = [
 
 [[package]]
 name = "io-fs"
-version = "1.0.0"
+version = "0.0.1"
 dependencies = [
  "log",
 ]
 
 [[package]]
 name = "io-http"
-version = "1.0.0"
+version = "0.0.1"
 dependencies = [
  "http",
  "httparse",
@@ -552,14 +552,14 @@ dependencies = [
 
 [[package]]
 name = "io-stream"
-version = "1.0.0"
+version = "0.0.1"
 dependencies = [
  "log",
 ]
 
 [[package]]
 name = "io-vdir"
-version = "1.0.0"
+version = "0.0.1"
 dependencies = [
  "calcard",
  "io-fs",

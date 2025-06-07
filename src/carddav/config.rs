@@ -18,7 +18,7 @@ pub struct Config {
     /// The CardDAV server authentication configuration.
     ///
     /// Authentication can be done using password or OAuth 2.0.
-    pub authentication: Authentication,
+    pub auth: Auth,
     // pub encryption: Encryption,
 }
 
@@ -29,14 +29,20 @@ impl Default for Config {
             port: 8001,
             home_uri: String::from("/"),
             http_version: Version::default(),
-            authentication: Authentication::default(),
+            auth: Auth::default(),
         }
     }
 }
 
 #[derive(Clone, Debug, Default)]
-pub enum Authentication {
+pub enum Auth {
     #[default]
-    None,
-    Basic(String, SecretString),
+    Plain,
+    Bearer {
+        token: SecretString,
+    },
+    Basic {
+        username: String,
+        password: SecretString,
+    },
 }

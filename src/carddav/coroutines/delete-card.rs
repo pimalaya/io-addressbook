@@ -1,5 +1,4 @@
 use io_stream::Io;
-use io_vdir::constants::VCF;
 use serde::Deserialize;
 
 use crate::carddav::{response::StatusResponse, Config, Request};
@@ -16,7 +15,7 @@ impl DeleteCard {
         let addressbook_id = addressbook_id.as_ref();
         let card_id = card_id.as_ref();
         let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.{VCF}");
+        let uri = &format!("{base_uri}/{addressbook_id}/{card_id}.vcf");
         let request = Request::delete(uri, config.http_version).content_type_xml();
         Self(Send::new(config, request, Self::BODY.as_bytes()))
     }

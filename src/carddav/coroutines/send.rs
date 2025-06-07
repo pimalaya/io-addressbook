@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use io_stream::Io;
 use serde::Deserialize;
 
-use crate::carddav::{config::Authentication, Config, Request};
+use crate::carddav::{Config, Request};
 
 #[derive(Debug)]
 pub struct Send<T: for<'a> Deserialize<'a>> {
@@ -13,11 +13,9 @@ pub struct Send<T: for<'a> Deserialize<'a>> {
 
 impl<T: for<'a> Deserialize<'a>> Send<T> {
     pub fn new(config: &Config, mut request: Request, body: &[u8]) -> Self {
-        request = request.host(&config.host, config.port);
-
-        if let Authentication::Basic(user, pass) = &config.authentication {
-            request = request.basic_auth(user, pass);
-        };
+        request = request
+            .host(&config.host, config.port)
+            .authorization(&config.auth);
 
         let request = request.body(body.to_vec());
 

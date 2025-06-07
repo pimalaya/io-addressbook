@@ -3,7 +3,9 @@ use http::{
     header::{AUTHORIZATION, CONTENT_TYPE, HOST},
     Method, Version,
 };
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::ExposeSecret;
+
+use super::config::Auth;
 
 #[derive(Debug, Default)]
 pub struct Request {
@@ -57,10 +59,20 @@ impl Request {
         self
     }
 
-    pub fn basic_auth(mut self, user: &str, pass: &SecretString) -> Self {
-        let pass = pass.expose_secret();
-        let auth = BASE64_STANDARD.encode(format!("{user}:{pass}"));
-        self.builder = self.builder.header(AUTHORIZATION, format!("Basic {auth}"));
+    pub fn authorization(mut self, auth: &Auth) -> Self {
+        match auth {
+            Auth::Plain => (),
+            Auth::Bearer { token } => {
+                let auth = format!("Bearer {}", token.expose_secret());
+                self.builder = self.builder.header(AUTHORIZATION, auth);
+            }
+            Auth::Basic { username, password } => {
+                let password = password.expose_secret();
+                let digest = BASE64_STANDARD.encode(format!("{username}:{password}"));
+                let auth = format!("Basic {digest}");
+                self.builder = self.builder.header(AUTHORIZATION, auth);
+            }
+        };
         self
     }
 
