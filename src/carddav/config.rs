@@ -1,48 +1,30 @@
-use http::Version;
+use std::borrow::Cow;
+
+use http::Uri;
 use secrecy::SecretString;
 
 #[derive(Clone, Debug)]
-pub struct Config {
-    /// The CardDAV server hostname.
-    pub host: String,
+pub struct CarddavConfig<'a> {
+    /// The URI of the CardDAV server.
+    pub uri: Cow<'a, Uri>,
 
-    /// The CardDAV server host port.
-    pub port: u16,
-
-    pub home_uri: String,
-
-    /// The HTTP version to use when communicating with the CardDAV
-    /// server.
-    pub http_version: Version,
-
-    /// The CardDAV server authentication configuration.
-    ///
-    /// Authentication can be done using password or OAuth 2.0.
-    pub auth: Auth,
-    // pub encryption: Encryption,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            host: String::from("127.0.0.1"),
-            port: 8001,
-            home_uri: String::from("/"),
-            http_version: Version::default(),
-            auth: Auth::default(),
-        }
-    }
+    /// The authentication/authorization method used to communicate
+    /// with the CardDAV server.
+    pub auth: CarddavAuth<'a>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub enum Auth {
+pub enum CarddavAuth<'a> {
+    /// The plain authentication method.
     #[default]
     Plain,
-    Bearer {
-        token: SecretString,
-    },
+
+    /// The basic authentication method.
     Basic {
-        username: String,
-        password: SecretString,
+        username: Cow<'a, str>,
+        password: Cow<'a, SecretString>,
     },
+
+    /// The bearer authorization method.
+    Bearer { token: Cow<'a, SecretString> },
 }

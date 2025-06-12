@@ -1,19 +1,20 @@
 use std::collections::HashSet;
 
 use calcard::vcard::VCard;
-use io_stream::Io;
+use io_stream::io::StreamIo;
 use log::{debug, trace};
 use serde::Deserialize;
 
 use crate::{
     carddav::{
+        config::CarddavConfig,
+        request::Request,
         response::{Multistatus, Value},
-        Config, Request,
     },
     Card,
 };
 
-use super::Send;
+use super::{Send, SendResult};
 
 #[derive(Debug)]
 pub struct ListCards {
@@ -24,28 +25,30 @@ pub struct ListCards {
 impl ListCards {
     const BODY: &'static str = include_str!("./list-cards.xml");
 
-    pub fn new(config: &Config, addressbook_id: impl ToString) -> Self {
+    pub fn new(config: &CarddavConfig, addressbook_id: impl ToString) -> Self {
         let addressbook_id = addressbook_id.to_string();
-        let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{addressbook_id}");
-
-        let request = Request::report(uri, config.http_version)
+        let request = Request::report(config, &addressbook_id)
             .content_type_xml()
             .depth(1);
 
         Self {
             addressbook_id,
-            send: Send::new(config, request, Self::BODY.as_bytes()),
+            send: Send::new(request, Self::BODY.as_bytes()),
         }
     }
 
-    pub fn resume(&mut self, arg: Option<Io>) -> Result<HashSet<Card>, Io> {
-        let body = self.send.resume(arg)?;
+    pub fn resume(&mut self, arg: Option<Io>) -> SendResult<HashSet<Card>> {
+        let body = match self.send.resume(arg) {
+            SendResult::Ok(body) => body,
+            SendResult::Err(err) => return SendResult::Err(err),
+            SendResult::Io(io) => return SendResult::Io(io),
+            SendResult::Redirect(res) => return SendResult::Redirect(res),
+        };
 
         let mut cards = HashSet::new();
 
         let Some(responses) = body.responses else {
-            return Ok(cards);
+            return SendResult::Ok(cards);
         };
 
         for response in responses {
@@ -100,7 +103,7 @@ impl ListCards {
             cards.insert(card);
         }
 
-        Ok(cards)
+        SendResult::Ok(cards)
     }
 }
 

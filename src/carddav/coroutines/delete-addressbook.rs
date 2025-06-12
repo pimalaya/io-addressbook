@@ -1,9 +1,9 @@
-use io_stream::Io;
+use io_stream::io::StreamIo;
 use serde::Deserialize;
 
-use crate::carddav::{response::StatusResponse, Config, Request};
+use crate::carddav::{config::CarddavConfig, request::Request, response::StatusResponse};
 
-use super::Send;
+use super::{Send, SendResult};
 
 #[derive(Debug)]
 pub struct DeleteAddressbook(Send<Response>);
@@ -11,16 +11,20 @@ pub struct DeleteAddressbook(Send<Response>);
 impl DeleteAddressbook {
     const BODY: &'static str = "";
 
-    pub fn new(config: &Config, id: impl AsRef<str>) -> Self {
-        let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{}", id.as_ref());
-        let request = Request::delete(uri, config.http_version).content_type_xml();
-        Self(Send::new(config, request, Self::BODY.as_bytes()))
+    pub fn new(config: &CarddavConfig, id: impl AsRef<str>) -> Self {
+        let request = Request::delete(config, id).content_type_xml();
+        Self(Send::new(request, Self::BODY.as_bytes()))
     }
 
-    pub fn resume(&mut self, arg: Option<Io>) -> Result<bool, Io> {
-        let body = self.0.resume(arg)?;
-        Ok(body.response.status.is_success())
+    pub fn resume(&mut self, arg: Option<Io>) -> SendResult<bool> {
+        let body = match self.0.resume(arg) {
+            SendResult::Ok(body) => body,
+            SendResult::Err(err) => return SendResult::Err(err),
+            SendResult::Io(io) => return SendResult::Io(io),
+            SendResult::Redirect(res) => return SendResult::Redirect(res),
+        };
+
+        SendResult::Ok(body.response.status.is_success())
     }
 }
 

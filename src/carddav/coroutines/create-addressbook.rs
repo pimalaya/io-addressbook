@@ -1,8 +1,8 @@
 use io_http::v1_1::coroutines::Send;
-use io_stream::Io;
+use io_stream::io::StreamIo;
 
 use crate::{
-    carddav::{Config, Request},
+    carddav::{config::CarddavConfig, request::Request},
     Addressbook,
 };
 
@@ -10,10 +10,7 @@ use crate::{
 pub struct CreateAddressbook(Send);
 
 impl CreateAddressbook {
-    pub fn new(config: &Config, mut addressbook: Addressbook) -> Self {
-        let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{}", addressbook.id);
-
+    pub fn new(config: &CarddavConfig, mut addressbook: Addressbook) -> Self {
         let name = match addressbook.display_name.take() {
             Some(name) => format!("<displayname>{name}</displayname>"),
             None => String::new(),
@@ -29,11 +26,7 @@ impl CreateAddressbook {
             None => String::new(),
         };
 
-        let request = Request::mkcol(uri, config.http_version)
-            .content_type_xml()
-            .host(&config.host, config.port)
-            .authorization(&config.auth);
-
+        let request = Request::mkcol(config, addressbook.id).content_type_xml();
         let body = format!(include_str!("./create-addressbook.xml"), name, color, desc);
         let request = request.body(body.as_bytes().to_vec());
 
@@ -41,7 +34,7 @@ impl CreateAddressbook {
     }
 
     pub fn resume(&mut self, arg: Option<Io>) -> Result<(), Io> {
-        let response = self.0.resume(arg)?;
+        let (_, response) = self.0.resume(arg)?;
         let body = String::from_utf8_lossy(response.body());
 
         if !response.status().is_success() {

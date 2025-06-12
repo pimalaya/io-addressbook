@@ -1,13 +1,15 @@
-use io_stream::Io;
+use http::Uri;
+use io_stream::io::StreamIo;
 use log::debug;
 use serde::Deserialize;
 
 use crate::carddav::{
+    config::CarddavConfig,
+    request::Request,
     response::{HrefProp, Multistatus},
-    Config, Request,
 };
 
-use super::Send;
+use super::send::{Send, SendOk, SendResult};
 
 #[derive(Debug)]
 pub struct CurrentUserPrincipal(Send<Multistatus<Prop>>);
@@ -15,16 +17,27 @@ pub struct CurrentUserPrincipal(Send<Multistatus<Prop>>);
 impl CurrentUserPrincipal {
     const BODY: &'static str = include_str!("./current-user-principal.xml");
 
-    pub fn new(config: &Config, uri: impl AsRef<str>) -> Self {
-        let request = Request::propfind(uri.as_ref(), config.http_version).content_type_xml();
-        Self(Send::new(config, request, Self::BODY.as_bytes()))
+    pub fn new(config: &CarddavConfig) -> Self {
+        let request = Request::propfind(config, "/").content_type_xml();
+        let body = Self::BODY.as_bytes().into_iter().cloned();
+        Self(Send::new(request, body))
     }
 
-    pub fn resume(&mut self, arg: Option<Io>) -> Result<Option<String>, Io> {
-        let body = self.0.resume(arg)?;
+    pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<SendOk<Option<Uri>>> {
+        let ok = match self.0.resume(arg) {
+            SendResult::Ok(ok) => ok,
+            SendResult::Err(err) => return SendResult::Err(err),
+            SendResult::Io(io) => return SendResult::Io(io),
+            SendResult::Reset(uri) => return SendResult::Reset(uri),
+        };
 
-        let Some(responses) = body.responses else {
-            return Ok(None);
+        let Some(responses) = ok.body.responses else {
+            return SendResult::Ok(SendOk {
+                request: ok.request,
+                response: ok.response,
+                keep_alive: ok.keep_alive,
+                body: None,
+            });
         };
 
         for response in responses {
@@ -47,11 +60,21 @@ impl CurrentUserPrincipal {
                     continue;
                 }
 
-                return Ok(Some(propstat.prop.current_user_principal.href.value));
+                return SendResult::Ok(SendOk {
+                    request: ok.request,
+                    response: ok.response,
+                    keep_alive: ok.keep_alive,
+                    body: propstat.prop.current_user_principal.uri().ok(),
+                });
             }
         }
 
-        Ok(None)
+        SendResult::Ok(SendOk {
+            request: ok.request,
+            response: ok.response,
+            keep_alive: ok.keep_alive,
+            body: None,
+        })
     }
 }
 

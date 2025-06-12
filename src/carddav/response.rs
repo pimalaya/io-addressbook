@@ -1,3 +1,4 @@
+use http::{uri::InvalidUri, Uri};
 use memchr::memmem;
 use serde::Deserialize;
 
@@ -35,6 +36,12 @@ pub struct Propstat<T> {
 #[derive(Clone, Debug, Deserialize)]
 pub struct HrefProp {
     pub href: Value,
+}
+
+impl HrefProp {
+    pub fn uri(&self) -> Result<Uri, InvalidUri> {
+        self.href.value.parse()
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]

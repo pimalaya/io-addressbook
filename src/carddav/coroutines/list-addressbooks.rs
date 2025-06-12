@@ -1,15 +1,15 @@
 use std::collections::HashSet;
 
-use io_stream::Io;
+use io_stream::io::StreamIo;
 use log::{debug, trace};
 use serde::Deserialize;
 
 use crate::{
-    carddav::{response::Multistatus, Config, Request},
+    carddav::{config::CarddavConfig, request::Request, response::Multistatus},
     Addressbook,
 };
 
-use super::Send;
+use super::send::{Send, SendOk, SendResult};
 
 #[derive(Debug)]
 pub struct ListAddressbooks(Send<Multistatus<Prop>>);
@@ -17,18 +17,29 @@ pub struct ListAddressbooks(Send<Multistatus<Prop>>);
 impl ListAddressbooks {
     const BODY: &'static str = include_str!("./list-addressbooks.xml");
 
-    pub fn new(config: &Config) -> Self {
-        let request = Request::propfind(&config.home_uri, config.http_version).depth(1);
-        Self(Send::new(config, request, Self::BODY.as_bytes()))
+    pub fn new(config: &CarddavConfig) -> Self {
+        let request = Request::propfind(config, "").depth(1);
+        let body = Self::BODY.as_bytes().into_iter().cloned();
+        Self(Send::new(request, body))
     }
 
-    pub fn resume(&mut self, arg: Option<Io>) -> Result<HashSet<Addressbook>, Io> {
-        let body = self.0.resume(arg)?;
+    pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<SendOk<HashSet<Addressbook>>> {
+        let ok = match self.0.resume(arg) {
+            SendResult::Ok(ok) => ok,
+            SendResult::Err(err) => return SendResult::Err(err),
+            SendResult::Io(io) => return SendResult::Io(io),
+            SendResult::Reset(uri) => return SendResult::Reset(uri),
+        };
 
         let mut addressbooks = HashSet::new();
 
-        let Some(responses) = body.responses else {
-            return Ok(addressbooks);
+        let Some(responses) = ok.body.responses else {
+            return SendResult::Ok(SendOk {
+                request: ok.request,
+                response: ok.response,
+                keep_alive: ok.keep_alive,
+                body: addressbooks,
+            });
         };
 
         for response in responses {
@@ -101,7 +112,12 @@ impl ListAddressbooks {
             }
         }
 
-        Ok(addressbooks)
+        SendResult::Ok(SendOk {
+            request: ok.request,
+            response: ok.response,
+            keep_alive: ok.keep_alive,
+            body: addressbooks,
+        })
     }
 }
 

@@ -1,11 +1,11 @@
 use base64::{prelude::BASE64_STANDARD, Engine};
 use http::{
     header::{AUTHORIZATION, CONTENT_TYPE, HOST},
-    Method, Version,
+    Method, Uri,
 };
 use secrecy::ExposeSecret;
 
-use super::config::Auth;
+use super::config::{CarddavAuth, CarddavConfig};
 
 #[derive(Debug, Default)]
 pub struct Request {
@@ -13,67 +13,63 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new(method: Method, uri: &str, version: Version) -> Self {
-        let builder = http::Request::builder()
-            .method(method)
-            .version(version)
-            .uri(uri);
+    pub fn new(config: &CarddavConfig, method: Method, path: impl AsRef<str>) -> Self {
+        let uri = push_uri_path(config.uri.clone().into_owned(), path);
+        let mut builder = http::Request::builder().method(method).uri(uri);
+
+        match (config.uri.host(), config.uri.port()) {
+            (Some(host), Some(port)) => builder = builder.header(HOST, format!("{host}:{port}")),
+            (Some(host), None) => builder = builder.header(HOST, host.to_string()),
+            (None, _) => (),
+        };
+
+        match &config.auth {
+            CarddavAuth::Plain => (),
+            CarddavAuth::Bearer { token } => {
+                let auth = format!("Bearer {}", token.expose_secret());
+                builder = builder.header(AUTHORIZATION, auth);
+            }
+            CarddavAuth::Basic { username, password } => {
+                let password = password.expose_secret();
+                let digest = BASE64_STANDARD.encode(format!("{username}:{password}"));
+                let auth = format!("Basic {digest}");
+                builder = builder.header(AUTHORIZATION, auth);
+            }
+        }
 
         Self { builder }
     }
 
-    pub fn delete(uri: &str, version: Version) -> Self {
-        Self::new(Method::DELETE, uri, version)
+    pub fn delete(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
+        Self::new(config, Method::DELETE, path)
     }
 
-    pub fn get(uri: &str, version: Version) -> Self {
-        Self::new(Method::GET, uri, version)
+    pub fn get(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
+        Self::new(config, Method::GET, path)
     }
 
-    pub fn mkcol(uri: &str, version: Version) -> Self {
+    pub fn mkcol(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
         let method = Method::from_bytes(b"MKCOL").unwrap();
-        Self::new(method, uri, version)
+        Self::new(config, method, path)
     }
 
-    pub fn proppatch(uri: &str, version: Version) -> Self {
+    pub fn proppatch(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
         let method = Method::from_bytes(b"PROPPATCH").unwrap();
-        Self::new(method, uri, version)
+        Self::new(config, method, path)
     }
 
-    pub fn propfind(uri: &str, version: Version) -> Self {
+    pub fn propfind(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
         let method = Method::from_bytes(b"PROPFIND").unwrap();
-        Self::new(method, uri, version)
+        Self::new(config, method, path)
     }
 
-    pub fn put(uri: &str, version: Version) -> Self {
-        Self::new(Method::PUT, uri, version)
+    pub fn put(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
+        Self::new(config, Method::PUT, path)
     }
 
-    pub fn report(uri: &str, version: Version) -> Self {
+    pub fn report(config: &CarddavConfig, path: impl AsRef<str>) -> Self {
         let method = Method::from_bytes(b"REPORT").unwrap();
-        Self::new(method, uri, version)
-    }
-
-    pub fn host(mut self, host: &str, port: u16) -> Self {
-        self.builder = self.builder.header(HOST, format!("{host}:{port}"));
-        self
-    }
-
-    pub fn authorization(mut self, auth: &Auth) -> Self {
-        match auth {
-            Auth::Plain => (),
-            Auth::Bearer { token } => {
-                let auth = format!("Bearer {}", token.expose_secret());
-                self.builder = self.builder.header(AUTHORIZATION, auth);
-            }
-            Auth::Basic { username, password } => {
-                let password = password.expose_secret();
-                let digest = BASE64_STANDARD.encode(format!("{username}:{password}"));
-                let auth = format!("Basic {digest}");
-                self.builder = self.builder.header(AUTHORIZATION, auth);
-            }
-        };
-        self
+        Self::new(config, method, path)
     }
 
     pub fn depth(mut self, depth: usize) -> Self {
@@ -97,4 +93,36 @@ impl Request {
     pub fn body(self, body: impl IntoIterator<Item = u8>) -> http::Request<Vec<u8>> {
         self.builder.body(body.into_iter().collect()).unwrap()
     }
+}
+
+pub fn set_uri_path(uri: Uri, path: impl AsRef<str>) -> Uri {
+    let mut uri = uri.into_parts();
+    uri.path_and_query = Some(path.as_ref().parse().unwrap());
+    Uri::from_parts(uri).unwrap()
+}
+
+pub fn push_uri_path(uri: Uri, path: impl AsRef<str>) -> Uri {
+    let path = path.as_ref();
+
+    if path.is_empty() {
+        return uri;
+    }
+
+    let mut uri = uri.into_parts();
+
+    uri.path_and_query = Some(match uri.path_and_query {
+        None => path.parse().unwrap(),
+        Some(path_and_query) => {
+            let base_path = path_and_query.path().trim_end_matches('/');
+            let path = path.trim_start_matches('/');
+            let mut path = format!("{base_path}/{path}");
+            if let Some(query) = path_and_query.query() {
+                path.push('?');
+                path.push_str(query)
+            }
+            path.parse().unwrap()
+        }
+    });
+
+    Uri::from_parts(uri).unwrap()
 }

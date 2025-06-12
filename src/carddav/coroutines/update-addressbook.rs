@@ -1,22 +1,19 @@
-use io_stream::Io;
+use io_stream::io::StreamIo;
 use log::{debug, trace};
 use serde::Deserialize;
 
 use crate::{
-    carddav::{response::MkcolResponse, Config, Request},
+    carddav::{config::CarddavConfig, request::Request, response::MkcolResponse},
     Addressbook,
 };
 
-use super::Send;
+use super::{Send, SendResult};
 
 #[derive(Debug)]
 pub struct UpdateAddressbook(Send<MkcolResponse<Prop>>);
 
 impl UpdateAddressbook {
-    pub fn new(config: &Config, mut addressbook: Addressbook) -> Self {
-        let base_uri = config.home_uri.trim_end_matches('/');
-        let uri = &format!("{base_uri}/{}", addressbook.id);
-
+    pub fn new(config: &CarddavConfig, mut addressbook: Addressbook) -> Self {
         let name = match addressbook.display_name.take() {
             Some(name) => format!("<displayname>{name}</displayname>"),
             None => String::new(),
@@ -32,17 +29,21 @@ impl UpdateAddressbook {
             None => String::new(),
         };
 
-        let request = Request::proppatch(uri, config.http_version).content_type_xml();
+        let request = Request::proppatch(config, addressbook.id).content_type_xml();
         let body = format!(include_str!("./update-addressbook.xml"), name, color, desc);
-
-        Self(Send::new(config, request, body.as_bytes()))
+        Self(Send::new(request, body.as_bytes()))
     }
 
-    pub fn resume(&mut self, arg: Option<Io>) -> Result<(), Io> {
-        let body = self.0.resume(arg)?;
+    pub fn resume(&mut self, arg: Option<Io>) -> SendResult<()> {
+        let body = match self.0.resume(arg) {
+            SendResult::Ok(body) => body,
+            SendResult::Err(err) => return SendResult::Err(err),
+            SendResult::Io(io) => return SendResult::Io(io),
+            SendResult::Redirect(res) => return SendResult::Redirect(res),
+        };
 
         let Some(propstats) = body.propstats else {
-            return Ok(());
+            return SendResult::Ok(());
         };
 
         for propstat in propstats {
@@ -67,7 +68,7 @@ impl UpdateAddressbook {
             }
         }
 
-        Ok(())
+        SendResult::Ok(())
     }
 }
 
