@@ -9,10 +9,13 @@ use crate::carddav::{
     response::{HrefProp, Multistatus},
 };
 
-use super::send::{Send, SendOk, SendResult};
+use super::{
+    follow_redirects::{FollowRedirects, FollowRedirectsResult},
+    send::SendOk,
+};
 
 #[derive(Debug)]
-pub struct CurrentUserPrincipal(Send<Multistatus<Prop>>);
+pub struct CurrentUserPrincipal(FollowRedirects<Multistatus<Prop>>);
 
 impl CurrentUserPrincipal {
     const BODY: &'static str = include_str!("./current-user-principal.xml");
@@ -20,19 +23,19 @@ impl CurrentUserPrincipal {
     pub fn new(config: &CarddavConfig) -> Self {
         let request = Request::propfind(config, "/").content_type_xml();
         let body = Self::BODY.as_bytes().into_iter().cloned();
-        Self(Send::new(request, body))
+        Self(FollowRedirects::new(request, body))
     }
 
-    pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<SendOk<Option<Uri>>> {
+    pub fn resume(&mut self, arg: Option<StreamIo>) -> FollowRedirectsResult<Option<Uri>> {
         let ok = match self.0.resume(arg) {
-            SendResult::Ok(ok) => ok,
-            SendResult::Err(err) => return SendResult::Err(err),
-            SendResult::Io(io) => return SendResult::Io(io),
-            SendResult::Reset(uri) => return SendResult::Reset(uri),
+            FollowRedirectsResult::Ok(ok) => ok,
+            FollowRedirectsResult::Err(err) => return FollowRedirectsResult::Err(err),
+            FollowRedirectsResult::Io(io) => return FollowRedirectsResult::Io(io),
+            FollowRedirectsResult::Reset(uri) => return FollowRedirectsResult::Reset(uri),
         };
 
         let Some(responses) = ok.body.responses else {
-            return SendResult::Ok(SendOk {
+            return FollowRedirectsResult::Ok(SendOk {
                 request: ok.request,
                 response: ok.response,
                 keep_alive: ok.keep_alive,
@@ -60,7 +63,7 @@ impl CurrentUserPrincipal {
                     continue;
                 }
 
-                return SendResult::Ok(SendOk {
+                return FollowRedirectsResult::Ok(SendOk {
                     request: ok.request,
                     response: ok.response,
                     keep_alive: ok.keep_alive,
@@ -69,7 +72,7 @@ impl CurrentUserPrincipal {
             }
         }
 
-        SendResult::Ok(SendOk {
+        FollowRedirectsResult::Ok(SendOk {
             request: ok.request,
             response: ok.response,
             keep_alive: ok.keep_alive,

@@ -1,17 +1,17 @@
 #[path = "addressbook-home-set.rs"]
 pub mod addressbook_home_set;
-#[path = "well-known.rs"]
-pub mod well_known;
-// #[path = "create-addressbook.rs"]
-// pub mod create_addressbook;
+#[path = "create-addressbook.rs"]
+pub mod create_addressbook;
 // #[path = "create-card.rs"]
 // pub mod create_card;
 #[path = "current-user-principal.rs"]
 pub mod current_user_principal;
-// #[path = "delete-addressbook.rs"]
-// pub mod delete_addressbook;
+#[path = "delete-addressbook.rs"]
+pub mod delete_addressbook;
 // #[path = "delete-card.rs"]
 // pub mod delete_card;
+#[path = "follow-redirects.rs"]
+pub mod follow_redirects;
 #[path = "list-addressbooks.rs"]
 pub mod list_addressbooks;
 // #[path = "list-cards.rs"]
@@ -19,7 +19,9 @@ pub mod list_addressbooks;
 // #[path = "read-card.rs"]
 // pub mod read_card;
 pub mod send;
-// #[path = "update-addressbook.rs"]
-// pub mod update_addressbook;
+#[path = "update-addressbook.rs"]
+pub mod update_addressbook;
 // #[path = "update-card.rs"]
 // pub mod update_card;
+#[path = "well-known.rs"]
+pub mod well_known;

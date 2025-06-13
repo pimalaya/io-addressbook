@@ -1,4 +1,3 @@
-use io_http::v1_1::coroutines::Send;
 use io_stream::io::StreamIo;
 
 use crate::{
@@ -6,8 +5,10 @@ use crate::{
     Addressbook,
 };
 
+use super::send::{Empty, Send, SendResult};
+
 #[derive(Debug)]
-pub struct CreateAddressbook(Send);
+pub struct CreateAddressbook(Send<Empty>);
 
 impl CreateAddressbook {
     pub fn new(config: &CarddavConfig, mut addressbook: Addressbook) -> Self {
@@ -28,20 +29,11 @@ impl CreateAddressbook {
 
         let request = Request::mkcol(config, addressbook.id).content_type_xml();
         let body = format!(include_str!("./create-addressbook.xml"), name, color, desc);
-        let request = request.body(body.as_bytes().to_vec());
 
-        Self(Send::new(request))
+        Self(Send::new(request, body.as_bytes().to_vec()))
     }
 
-    pub fn resume(&mut self, arg: Option<Io>) -> Result<(), Io> {
-        let (_, response) = self.0.resume(arg)?;
-        let body = String::from_utf8_lossy(response.body());
-
-        if !response.status().is_success() {
-            let err = format!("HTTP error: {}: {body}", response.status());
-            return Err(Io::err(err));
-        }
-
-        Ok(())
+    pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<Empty> {
+        self.0.resume(arg)
     }
 }

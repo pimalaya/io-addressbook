@@ -23,12 +23,11 @@ impl ListAddressbooks {
         Self(Send::new(request, body))
     }
 
-    pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<SendOk<HashSet<Addressbook>>> {
+    pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<HashSet<Addressbook>> {
         let ok = match self.0.resume(arg) {
             SendResult::Ok(ok) => ok,
             SendResult::Err(err) => return SendResult::Err(err),
             SendResult::Io(io) => return SendResult::Io(io),
-            SendResult::Reset(uri) => return SendResult::Reset(uri),
         };
 
         let mut addressbooks = HashSet::new();
