@@ -1,5 +1,5 @@
 use http::{header::LOCATION, Method, StatusCode, Uri};
-use io_http::v1_1::coroutines::send::{Send, SendError, SendResult};
+use io_http::v1_1::coroutines::send::{SendHttp, SendHttpError, SendHttpResult};
 use io_stream::io::StreamIo;
 use thiserror::Error;
 
@@ -23,7 +23,7 @@ pub enum WellKnownError {
     InvalidLocationUri(#[source] http::uri::InvalidUri, String),
 
     #[error(transparent)]
-    Send(#[from] SendError),
+    Send(#[from] SendHttpError),
 }
 
 /// Send result returned by the coroutine's resume function.
@@ -38,20 +38,20 @@ pub enum WellKnownResult {
 }
 
 #[derive(Debug)]
-pub struct WellKnown(Send);
+pub struct WellKnown(SendHttp);
 
 impl WellKnown {
     pub fn new(config: &CarddavConfig, method: Option<Method>) -> Self {
         let method = method.unwrap_or(Method::GET);
         let request = Request::new(config, method, "");
-        Self(Send::new(request.body([])))
+        Self(SendHttp::new(request.body([])))
     }
 
     pub fn resume(&mut self, arg: Option<StreamIo>) -> WellKnownResult {
         let ok = match self.0.resume(arg) {
-            SendResult::Ok(ok) => ok,
-            SendResult::Err(err) => return WellKnownResult::Err(err.into()),
-            SendResult::Io(io) => return WellKnownResult::Io(io),
+            SendHttpResult::Ok(ok) => ok,
+            SendHttpResult::Err(err) => return WellKnownResult::Err(err.into()),
+            SendHttpResult::Io(io) => return WellKnownResult::Io(io),
         };
 
         let status = ok.response.status();

@@ -1,21 +1,65 @@
-use std::hash::{Hash, Hasher};
+use std::{
+    borrow::Cow,
+    hash::{Hash, Hasher},
+};
 
-use calcard::vcard::{VCard, VCardEntry};
+use calcard::{icalendar::ICalendarComponentType, Entry};
+use serde::{Serialize, Serializer};
+use thiserror::Error;
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+pub use calcard::vcard::*;
+
+#[derive(Clone, Debug, Error)]
+pub enum ParseCardError {
+    #[error("Invalid vCard format: parsed iCal instead")]
+    InvalidFormat,
+    #[error("Invalid vCard line: {0}")]
+    InvalidLine(String),
+    #[error("Unexpected vCard EOF")]
+    UnexpectedEof,
+    #[error("Too many vCard components")]
+    TooManyComponents,
+    #[error("Unexpected vCard component end: expected {0:?} got {1:?}")]
+    UnexpectedComponentEnd(ICalendarComponentType, ICalendarComponentType),
+    #[error("Unterminated vCard component: {0}")]
+    UnterminatedComponent(Cow<'static, str>),
+    #[error("Unknown vCard error: {0:?}")]
+    Unknown(Entry),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct Card {
     pub id: String,
     pub addressbook_id: String,
+    #[serde(serialize_with = "Card::serialize_vcard")]
     pub vcard: VCard,
 }
 
 impl Card {
-    pub fn new(addressbook_id: impl ToString, vcard: VCard) -> Self {
-        Self {
-            id: Uuid::new_v4().to_string(),
-            addressbook_id: addressbook_id.to_string(),
-            vcard,
+    pub fn new_uuid() -> Uuid {
+        Uuid::new_v4()
+    }
+
+    pub fn serialize_vcard<S: Serializer>(vcard: &VCard, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&vcard.to_string())
+    }
+
+    pub fn parse(contents: impl AsRef<str>) -> Result<VCard, ParseCardError> {
+        match VCard::parse(contents) {
+            Ok(vcard) => Ok(vcard),
+            Err(Entry::VCard(vcard)) => Ok(vcard),
+            Err(Entry::ICalendar(_)) => Err(ParseCardError::InvalidFormat),
+            Err(Entry::InvalidLine(line)) => Err(ParseCardError::InvalidLine(line)),
+            Err(Entry::Eof) => Err(ParseCardError::UnexpectedEof),
+            Err(Entry::TooManyComponents) => Err(ParseCardError::TooManyComponents),
+            Err(Entry::UnexpectedComponentEnd { expected, found }) => {
+                Err(ParseCardError::UnexpectedComponentEnd(expected, found))
+            }
+            Err(Entry::UnterminatedComponent(component)) => {
+                Err(ParseCardError::UnterminatedComponent(component))
+            }
+            Err(err) => Err(ParseCardError::Unknown(err)),
         }
     }
 

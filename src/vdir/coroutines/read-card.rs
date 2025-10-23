@@ -1,9 +1,35 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use io_fs::Io;
-use io_vdir::{constants::VCF, coroutines::ReadItem, ItemKind};
+use io_fs::io::FsIo;
+use io_vdir::{
+    constants::VCF,
+    coroutines::read_item::{ReadItem, ReadItemError, ReadItemResult},
+    item::ItemKind,
+};
+use thiserror::Error;
 
-use crate::Card;
+use crate::card::Card;
+
+#[derive(Clone, Debug, Error)]
+pub enum ReadCardError {
+    #[error("Read card error")]
+    ReadItem(#[from] ReadItemError),
+    #[error("Invalid card path {0}")]
+    InvalidAddressbookPath(PathBuf),
+    #[error("Invalid addressbook id at {0}")]
+    InvalidAddressbookId(PathBuf),
+    #[error("Invalid card id at {0}")]
+    InvalidCardId(PathBuf),
+    #[error("Invalid card at {0}")]
+    InvalidCard(PathBuf),
+}
+
+#[derive(Clone, Debug)]
+pub enum ReadCardResult {
+    Ok(Card),
+    Err(ReadCardError),
+    Io(FsIo),
+}
 
 #[derive(Debug)]
 pub struct ReadCard(ReadItem);
@@ -23,23 +49,31 @@ impl ReadCard {
         Self(ReadItem::new(path))
     }
 
-    pub fn resume(&mut self, input: Option<Io>) -> Result<Card, Io> {
-        let item = self.0.resume(input)?;
+    pub fn resume(&mut self, input: Option<FsIo>) -> ReadCardResult {
+        let item = loop {
+            match self.0.resume(input) {
+                ReadItemResult::Ok(item) => break item,
+                ReadItemResult::Err(err) => return ReadCardResult::Err(err.into()),
+                ReadItemResult::Io(io) => return ReadCardResult::Io(io),
+            }
+        };
 
-        let Some(parent) = item.path.parent() else {
-            return Err(Io::error("invalid item addressbook path"));
+        let p = &item.path;
+
+        let Some(parent) = p.parent() else {
+            return ReadCardResult::Err(ReadCardError::InvalidAddressbookPath(p.to_owned()));
         };
 
         let Some(addressbook_id) = parent.file_stem() else {
-            return Err(Io::error("invalid item addressbook id"));
+            return ReadCardResult::Err(ReadCardError::InvalidAddressbookId(p.to_owned()));
         };
 
-        let Some(id) = item.path.file_stem() else {
-            return Err(Io::error("invalid item id"));
+        let Some(id) = p.file_stem() else {
+            return ReadCardResult::Err(ReadCardError::InvalidCardId(p.to_owned()));
         };
 
         let ItemKind::Vcard(vcard) = item.kind else {
-            return Err(Io::error("invalid vcard"));
+            return ReadCardResult::Err(ReadCardError::InvalidCard(p.to_owned()));
         };
 
         let card = Card {
@@ -48,6 +82,6 @@ impl ReadCard {
             vcard,
         };
 
-        Ok(card)
+        ReadCardResult::Ok(card)
     }
 }

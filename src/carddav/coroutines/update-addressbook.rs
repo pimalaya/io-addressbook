@@ -3,8 +3,8 @@ use log::{debug, trace};
 use serde::Deserialize;
 
 use crate::{
+    addressbook::Addressbook,
     carddav::{config::CarddavConfig, request::Request, response::MkcolResponse},
-    Addressbook,
 };
 
 use super::send::{Send, SendOk, SendResult};

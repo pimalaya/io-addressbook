@@ -16,11 +16,3 @@ pub mod read_card;
 pub mod update_addressbook;
 #[path = "update-card.rs"]
 pub mod update_card;
-
-#[doc(inline)]
-pub use self::{
-    create_addressbook::CreateAddressbook, create_card::CreateCard,
-    delete_addressbook::DeleteAddressbook, delete_card::DeleteCard,
-    list_addressbooks::ListAddressbooks, list_cards::ListCards, read_card::ReadCard,
-    update_addressbook::UpdateAddressbook, update_card::UpdateCard,
-};

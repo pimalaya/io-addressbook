@@ -1,10 +1,27 @@
 use std::path::Path;
 
-use io_fs::Io;
-use io_vdir::{constants::VCF, coroutines::CreateItem, Item, ItemKind};
-use log::debug;
+use io_fs::io::FsIo;
+use io_vdir::{
+    constants::VCF,
+    coroutines::create_item::{CreateItem, CreateItemError, CreateItemResult},
+    item::{Item, ItemKind},
+};
+use thiserror::Error;
 
-use crate::Card;
+use crate::card::Card;
+
+#[derive(Clone, Debug, Error)]
+pub enum CreateCardError {
+    #[error("Create card error")]
+    CreateItem(#[from] CreateItemError),
+}
+
+#[derive(Clone, Debug)]
+pub enum CreateCardResult {
+    Ok,
+    Err(CreateCardError),
+    Io(FsIo),
+}
 
 #[derive(Debug)]
 pub struct CreateCard(CreateItem);
@@ -21,16 +38,11 @@ impl CreateCard {
         Self(CreateItem::new(Item { path, kind }))
     }
 
-    pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {
-        match self.0.resume(io) {
-            Ok(()) => {
-                debug!("resume after creating vcf file");
-                Ok(())
-            }
-            Err(io) => {
-                debug!("break: need I/O to create vcf file");
-                Err(io)
-            }
+    pub fn resume(&mut self, input: Option<FsIo>) -> CreateCardResult {
+        match self.0.resume(input) {
+            CreateItemResult::Ok => CreateCardResult::Ok,
+            CreateItemResult::Err(err) => CreateCardResult::Err(err.into()),
+            CreateItemResult::Io(io) => CreateCardResult::Io(io),
         }
     }
 }

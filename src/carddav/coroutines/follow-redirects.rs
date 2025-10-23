@@ -2,11 +2,8 @@ use std::marker::PhantomData;
 
 use http::{StatusCode, Uri};
 use io_http::v1_1::coroutines::{
-    follow_redirects::{
-        FollowRedirects as HttpFollowRedirects, FollowRedirectsError as HttpFollowRedirectsError,
-        FollowRedirectsResult as HttpFollowRedirectsResult,
-    },
-    send::Send as HttpSend,
+    follow_redirects::{FollowHttpRedirects, FollowHttpRedirectsError, FollowHttpRedirectsResult},
+    send::SendHttp,
 };
 use io_stream::io::StreamIo;
 use serde::Deserialize;
@@ -32,32 +29,32 @@ pub enum FollowRedirectsError {
     ParseResponseBody(quick_xml::DeError),
 
     #[error(transparent)]
-    FollowRedirects(#[from] HttpFollowRedirectsError),
+    FollowRedirects(#[from] FollowHttpRedirectsError),
 }
 
 #[derive(Debug)]
 pub struct FollowRedirects<T: for<'a> Deserialize<'a>> {
     phantom: PhantomData<T>,
-    send: HttpFollowRedirects,
+    send: FollowHttpRedirects,
 }
 
 impl<T: for<'a> Deserialize<'a>> FollowRedirects<T> {
     pub fn new(request: Request, body: impl IntoIterator<Item = u8>) -> Self {
         let request = request.body(body.into_iter().collect::<Vec<_>>());
-        let send = HttpSend::new(request);
+        let send = SendHttp::new(request);
 
         Self {
             phantom: PhantomData::default(),
-            send: HttpFollowRedirects::new(send),
+            send: FollowHttpRedirects::new(send),
         }
     }
 
     pub fn resume(&mut self, arg: Option<StreamIo>) -> FollowRedirectsResult<T> {
         let ok = match self.send.resume(arg) {
-            HttpFollowRedirectsResult::Ok(ok) => ok,
-            HttpFollowRedirectsResult::Err(err) => return FollowRedirectsResult::Err(err.into()),
-            HttpFollowRedirectsResult::Io(io) => return FollowRedirectsResult::Io(io),
-            HttpFollowRedirectsResult::Reset(uri) => return FollowRedirectsResult::Reset(uri),
+            FollowHttpRedirectsResult::Ok(ok) => ok,
+            FollowHttpRedirectsResult::Err(err) => return FollowRedirectsResult::Err(err.into()),
+            FollowHttpRedirectsResult::Io(io) => return FollowRedirectsResult::Io(io),
+            FollowHttpRedirectsResult::Reset(uri) => return FollowRedirectsResult::Reset(uri),
         };
 
         let body = String::from_utf8_lossy(ok.response.body());

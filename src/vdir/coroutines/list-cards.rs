@@ -1,9 +1,26 @@
 use std::{collections::HashSet, path::Path};
 
-use io_fs::Io;
-use io_vdir::{coroutines::ListItems, ItemKind};
+use io_fs::io::FsIo;
+use io_vdir::{
+    coroutines::list_items::{ListItems, ListItemsError, ListItemsResult},
+    item::ItemKind,
+};
+use thiserror::Error;
 
-use crate::Card;
+use crate::card::Card;
+
+#[derive(Clone, Debug, Error)]
+pub enum ListCardsError {
+    #[error("List cards error")]
+    ListItems(#[from] ListItemsError),
+}
+
+#[derive(Clone, Debug)]
+pub enum ListCardsResult {
+    Ok(HashSet<Card>),
+    Err(ListItemsError),
+    Io(FsIo),
+}
 
 #[derive(Debug)]
 pub struct ListCards(ListItems);
@@ -13,8 +30,15 @@ impl ListCards {
         Self(ListItems::new(root.as_ref().join(addressbook_id.as_ref())))
     }
 
-    pub fn resume(&mut self, input: Option<Io>) -> Result<HashSet<Card>, Io> {
-        let items = self.0.resume(input)?;
+    pub fn resume(&mut self, input: Option<FsIo>) -> ListCardsResult {
+        let items = loop {
+            match self.0.resume(input) {
+                ListItemsResult::Ok(items) => break items,
+                ListItemsResult::Err(err) => return ListCardsResult::Err(err.into()),
+                ListItemsResult::Io(io) => return ListCardsResult::Io(io),
+            }
+        };
+
         let mut cards = HashSet::new();
 
         for item in items {
@@ -41,6 +65,6 @@ impl ListCards {
             });
         }
 
-        Ok(cards)
+        ListCardsResult::Ok(cards)
     }
 }

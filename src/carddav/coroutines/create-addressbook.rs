@@ -1,8 +1,8 @@
 use io_stream::io::StreamIo;
 
 use crate::{
+    addressbook::Addressbook,
     carddav::{config::CarddavConfig, request::Request},
-    Addressbook,
 };
 
 use super::send::{Empty, Send, SendResult};

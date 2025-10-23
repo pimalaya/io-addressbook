@@ -1,10 +1,27 @@
 use std::path::Path;
 
-use io_fs::Io;
-use io_vdir::{constants::VCF, coroutines::UpdateItem, Item, ItemKind};
-use log::debug;
+use io_fs::io::FsIo;
+use io_vdir::{
+    constants::VCF,
+    coroutines::update_item::{UpdateItem, UpdateItemError, UpdateItemResult},
+    item::{Item, ItemKind},
+};
+use thiserror::Error;
 
-use crate::Card;
+use crate::card::Card;
+
+#[derive(Clone, Debug, Error)]
+pub enum UpdateCardError {
+    #[error("Update card error")]
+    UpdateItem(#[from] UpdateItemError),
+}
+
+#[derive(Clone, Debug)]
+pub enum UpdateCardResult {
+    Ok,
+    Err(UpdateCardError),
+    Io(FsIo),
+}
 
 #[derive(Debug)]
 pub struct UpdateCard(UpdateItem);
@@ -21,16 +38,11 @@ impl UpdateCard {
         Self(UpdateItem::new(Item { path, kind }))
     }
 
-    pub fn resume(&mut self, io: Option<Io>) -> Result<(), Io> {
-        match self.0.resume(io) {
-            Ok(()) => {
-                debug!("resume after creating vcf file");
-                Ok(())
-            }
-            Err(io) => {
-                debug!("break: need I/O to update vcf file");
-                Err(io)
-            }
+    pub fn resume(&mut self, input: Option<FsIo>) -> UpdateCardResult {
+        match self.0.resume(input) {
+            UpdateItemResult::Ok => UpdateCardResult::Ok,
+            UpdateItemResult::Err(err) => UpdateCardResult::Err(err.into()),
+            UpdateItemResult::Io(io) => UpdateCardResult::Io(io),
         }
     }
 }

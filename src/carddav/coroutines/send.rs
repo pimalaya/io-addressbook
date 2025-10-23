@@ -1,9 +1,7 @@
 use std::marker::PhantomData;
 
 use http::StatusCode;
-use io_http::v1_1::coroutines::send::{
-    Send as HttpSend, SendError as HttpSendError, SendResult as HttpSendResult,
-};
+use io_http::v1_1::coroutines::send::{SendHttp, SendHttpError, SendHttpResult};
 use io_stream::io::StreamIo;
 use serde::{Deserialize, Deserializer};
 use thiserror::Error;
@@ -22,11 +20,13 @@ pub struct SendOk<T> {
 pub enum SendError {
     #[error("HTTP response error {0}: {1}")]
     Response(StatusCode, String),
-    #[error("Parse HTTP response body error")]
-    ParseResponseBody(quick_xml::DeError),
+    #[error("Parse HTTP response XML body error")]
+    ParseXmlResponseBody(quick_xml::DeError),
+    #[error("Parse HTTP response vCard body error")]
+    ParseVcardResponseBody(calcard::Entry),
 
     #[error(transparent)]
-    Send(#[from] HttpSendError),
+    Send(#[from] SendHttpError),
 }
 
 /// Send result returned by the coroutine's resume function.
@@ -43,7 +43,7 @@ pub enum SendResult<T> {
 #[derive(Debug)]
 pub struct Send<T: for<'a> Deserialize<'a>> {
     phantom: PhantomData<T>,
-    send: HttpSend,
+    send: SendHttp,
 }
 
 impl<T: for<'a> Deserialize<'a>> Send<T> {
@@ -52,15 +52,15 @@ impl<T: for<'a> Deserialize<'a>> Send<T> {
 
         Self {
             phantom: PhantomData::default(),
-            send: HttpSend::new(request),
+            send: SendHttp::new(request),
         }
     }
 
     pub fn resume(&mut self, arg: Option<StreamIo>) -> SendResult<T> {
         let ok = match self.send.resume(arg) {
-            HttpSendResult::Ok(ok) => ok,
-            HttpSendResult::Err(err) => return SendResult::Err(err.into()),
-            HttpSendResult::Io(io) => return SendResult::Io(io),
+            SendHttpResult::Ok(ok) => ok,
+            SendHttpResult::Err(err) => return SendResult::Err(err.into()),
+            SendHttpResult::Io(io) => return SendResult::Io(io),
         };
 
         let body = String::from_utf8_lossy(ok.response.body());
@@ -73,7 +73,7 @@ impl<T: for<'a> Deserialize<'a>> Send<T> {
 
         let body = match quick_xml::de::from_str(&body) {
             Ok(xml) => xml,
-            Err(err) => return SendResult::Err(SendError::ParseResponseBody(err)),
+            Err(err) => return SendResult::Err(SendError::ParseXmlResponseBody(err)),
         };
 
         SendResult::Ok(SendOk {
