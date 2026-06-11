@@ -1,214 +1,78 @@
-use std::{collections::HashSet, io::ErrorKind};
+#![cfg(all(feature = "client", feature = "vdir"))]
 
-use calcard::vcard::VCard;
-use io_addressbook::{vdir::coroutines::*, Addressbook, Card};
-use io_fs::runtimes::std::handle;
-use tempdir::TempDir;
+use io_addressbook::{
+    addressbook::AddressbookDiff, client::AddressbookClientStd, vdir::client::VdirClient,
+};
+use io_vdir::{client::VdirClient as InnerVdirClient, path::VdirPath};
+use tempfile::tempdir;
+
+const VCARD_V1: &[u8] = b"BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Test\r\nEND:VCARD\r\n";
+const VCARD_V2: &[u8] = b"BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Test2\r\nEND:VCARD\r\n";
 
 #[test]
 fn std_vdir() {
-    let workdir = TempDir::new("test-vdir-std").unwrap();
-    let root = workdir.path();
+    let _ = env_logger::builder().is_test(true).try_init();
+
+    let workdir = tempdir().unwrap();
+    let root = VdirPath::new(workdir.path().to_string_lossy().into_owned());
+    let mut client = AddressbookClientStd::from(VdirClient::new(InnerVdirClient::new(root)));
 
     // should list empty addressbooks
-
-    let mut arg = None;
-    let mut list = ListAddressbooks::new(&root);
-
-    let addressbooks = loop {
-        match list.resume(arg) {
-            Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
-    };
-
+    let addressbooks = client.list_addressbooks().unwrap();
     assert!(addressbooks.is_empty());
 
-    // should create addressbook without metadata
+    // should create an addressbook without metadata
+    client.create_addressbook("personal", None, None).unwrap();
 
-    let mut addressbook = Addressbook::new();
+    let addressbooks = client.list_addressbooks().unwrap();
+    assert_eq!(addressbooks.len(), 1);
+    assert_eq!(addressbooks[0].id, "personal");
 
-    let mut arg = None;
-    let mut create = CreateAddressbook::new(root, addressbook.clone());
-
-    while let Err(io) = create.resume(arg) {
-        arg = Some(handle(io).unwrap());
-    }
-
-    let mut arg = None;
-    let mut list = ListAddressbooks::new(&root);
-
-    let addressbooks = loop {
-        match list.resume(arg) {
-            Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
+    // should update addressbook metadata
+    let patch = AddressbookDiff {
+        name: Some("Custom addressbook name".into()),
+        description: Some(Some("This is a description.".into())),
+        color: Some(Some("#000000".into())),
     };
+    client.update_addressbook("personal", patch).unwrap();
 
-    let expected_addressbooks = HashSet::from_iter([addressbook.clone()]);
-
-    assert_eq!(addressbooks, expected_addressbooks);
-
-    // should not re-create existing addressbook
-
-    let mut arg = None;
-    let mut create = CreateAddressbook::new(root, addressbook.clone());
-
-    loop {
-        match create.resume(arg) {
-            Ok(()) => unreachable!("should not be OK"),
-            Err(io) => match handle(io) {
-                Ok(output) => arg = Some(output),
-                Err(err) => break assert_eq!(err.kind(), ErrorKind::AlreadyExists),
-            },
-        }
-    }
-
-    // should update addressbook with metadata
-
-    addressbook.display_name = Some("Custom addressbook name".into());
-    addressbook.description = Some("This is a description.".into());
-    addressbook.color = Some("#000000".into());
-
-    let mut arg = None;
-    let mut update = UpdateAddressbook::new(root, addressbook.clone());
-
-    while let Err(io) = update.resume(arg) {
-        arg = Some(handle(io).unwrap());
-    }
-
-    let mut arg = None;
-    let mut list = ListAddressbooks::new(&root);
-
-    let cards = loop {
-        match list.resume(arg) {
-            Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
-    };
-
-    let expected_addressbooks = HashSet::from_iter([addressbook.clone()]);
-
-    assert_eq!(cards, expected_addressbooks);
-
-    // should create card
-
-    let mut card = Card::new(
-        &addressbook.id,
-        VCard::parse("BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n").unwrap(),
-    );
-
-    let mut arg = None;
-    let mut create = CreateCard::new(root, card.clone());
-
-    while let Err(io) = create.resume(arg) {
-        arg = Some(handle(io).unwrap());
-    }
-
-    let mut arg = None;
-    let mut list = ListCards::new(root, &addressbook.id);
-
-    let cards = loop {
-        match list.resume(arg) {
-            Ok(cards) => break cards,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
-    };
-
-    assert_eq!(cards.len(), 1);
-
-    let first_card = cards.into_iter().next().unwrap();
-
+    let addressbooks = client.list_addressbooks().unwrap();
+    let addressbook = addressbooks
+        .iter()
+        .find(|a| a.id == "personal")
+        .expect("personal addressbook present");
+    assert_eq!(addressbook.name, "Custom addressbook name");
     assert_eq!(
-        first_card.to_string(),
-        "BEGIN:VCARD\r\nUID: abc123\r\nEND:VCARD\r\n"
+        addressbook.description.as_deref(),
+        Some("This is a description.")
     );
+    assert_eq!(addressbook.color.as_deref(), Some("#000000"));
 
-    // should update card
+    // should create a card
+    let id = client.create_card("personal", VCARD_V1.to_vec()).unwrap();
+    assert!(!id.is_empty());
 
-    card.vcard = VCard::parse("BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n").unwrap();
-
-    let mut arg = None;
-    let mut update = UpdateCard::new(root, card);
-
-    while let Err(io) = update.resume(arg) {
-        arg = Some(handle(io).unwrap());
-    }
-
-    let mut arg = None;
-    let mut list = ListCards::new(root, &addressbook.id);
-
-    let cards = loop {
-        match list.resume(arg) {
-            Ok(cards) => break cards,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
-    };
-
+    let cards = client.list_cards("personal", None, None).unwrap();
     assert_eq!(cards.len(), 1);
+    assert_eq!(cards[0].id, id);
+    assert_eq!(cards[0].addressbook_id, "personal");
+    assert_eq!(cards[0].contents, VCARD_V1);
 
-    let card = cards.into_iter().next().unwrap();
+    // should update the card
+    client
+        .update_card("personal", &id, VCARD_V2.to_vec(), None)
+        .unwrap();
 
-    assert_eq!(
-        card.to_string(),
-        "BEGIN:VCARD\r\nUID: def456\r\nEND:VCARD\r\n"
-    );
+    let card = client.get_card("personal", &id).unwrap();
+    assert_eq!(card.contents, VCARD_V2);
 
-    // // should read card
+    // should delete the card
+    client.delete_card("personal", &id).unwrap();
+    let cards = client.list_cards("personal", None, None).unwrap();
+    assert!(cards.is_empty());
 
-    // let mut output = None;
-    // let mut fs = ReadCard::vcard(addressbook.path(), "card");
-
-    // let expected_card = loop {
-    //     match fs.resume(output) {
-    //         Ok(card) => break card,
-    //         Err(input) => output = Some(handle(input).unwrap()),
-    //     }
-    // };
-
-    // assert_eq!(card, expected_card);
-
-    // should delete card
-
-    let mut arg = None;
-    let mut delete = DeleteCard::new(root, &addressbook.id, &card.id);
-
-    while let Err(io) = delete.resume(arg) {
-        arg = Some(handle(io).unwrap());
-    }
-
-    let mut arg = None;
-    let mut list = ListCards::new(root, &addressbook.id);
-
-    let cards = loop {
-        match list.resume(arg) {
-            Ok(cards) => break cards,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
-    };
-
-    assert_eq!(cards.into_iter().count(), 0);
-
-    // should delete addressbook
-
-    let mut arg = None;
-    let mut delete = DeleteAddressbook::new(root, &addressbook.id);
-
-    while let Err(io) = delete.resume(arg) {
-        arg = Some(handle(io).unwrap());
-    }
-
-    let mut arg = None;
-    let mut list = ListAddressbooks::new(root);
-
-    let addressbooks = loop {
-        match list.resume(arg) {
-            Ok(addressbooks) => break addressbooks,
-            Err(io) => arg = Some(handle(io).unwrap()),
-        }
-    };
-
+    // should delete the addressbook
+    client.delete_addressbook("personal").unwrap();
+    let addressbooks = client.list_addressbooks().unwrap();
     assert!(addressbooks.is_empty());
-
-    workdir.close().unwrap();
 }
