@@ -143,9 +143,9 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
 name = "calcard"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6d4f7ea9ab08310fba58c0010e3c203aaa2b6464f1d4886d36855d99b6b6036"
+checksum = "4c253992730ab0e6e0994eaa50521b369789147f4dd70d077efc1e60c856da28"
 dependencies = [
  "ahash",
  "chrono",
@@ -633,7 +633,7 @@ dependencies = [
 [[package]]
 name = "io-webdav"
 version = "0.0.1"
-source = "git+https://github.com/pimalaya/io-webdav#461fe86c3bd686b5ab147f41c5ab59d366163d41"
+source = "git+https://github.com/pimalaya/io-webdav#e07e9289dcf9a606ae271095acb39a3e1afccd3a"
 dependencies = [
  "anyhow",
  "io-http",
@@ -683,9 +683,9 @@ dependencies = [
 
 [[package]]
 name = "jmap-tools"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "751dc449b93fc24f460c346ac2e0a87f410cd3f78971709c4e7b80236432aa30"
+checksum = "acb13aa98c80fe11bd7fb170bb8485d5844a30a41398894a3adb5c1216d3c357"
 dependencies = [
  "hashify",
  "serde",
